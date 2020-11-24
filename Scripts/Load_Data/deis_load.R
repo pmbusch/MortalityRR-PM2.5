@@ -54,4 +54,27 @@ df_deis <- df_deis %>% mutate(grupo_edad=case_when(
 df_deis <- df_deis %>% filter(year %in% c(2017:2019))
 
 
+# Age group
+df_deis <- df_deis %>% 
+  mutate(age_group=case_when(
+  edad < 5 ~ "0-4",
+  edad < 10 ~ "5-9",
+  edad < 15 ~ "10-14",
+  edad < 20 ~ "15-19",
+  edad < 25 ~ "20-24",
+  edad < 30 ~ "25-29",
+  edad < 35 ~ "30-34",
+  edad < 40 ~ "35-39",
+  edad < 45 ~ "40-44",
+  edad < 50 ~ "45-49",
+  edad < 55 ~ "50-54",
+  edad < 60 ~ "55-59",
+  edad < 65 ~ "60-64",
+  edad < 70 ~ "65-69",
+  edad < 75 ~ "70-74",
+  edad < 80 ~ "75-79",
+  # edad < 85 ~ "80-84",
+  T ~ "80+"))
+
+
 ## EoF
