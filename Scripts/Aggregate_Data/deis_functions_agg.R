@@ -74,7 +74,7 @@ f_adjMR <- function(deaths, population, cause_filter=T, sex_filter=T, name_var="
   
   # Calculate MR
   df_mr <- deaths %>% 
-    mutate(mr=total_deaths/pop*1e5)
+    mutate(mr=if_else(pop==0, 0, total_deaths/pop*1e5))
   
   # Ajusted MR with national age profile
   df_mr <- df_mr %>% left_join(national_age_profile, by = c("age_group")) %>% 
@@ -133,11 +133,11 @@ f_MR <- function(deaths, population,
   
   # Calculate MR
   df_mr <- deaths %>% 
-    mutate(mr=total_deaths/pop*1e5)
-    # dplyr::select(codigo_comuna, mr)
+    mutate(mr=total_deaths/pop*1e5,
+           total_deaths=NULL, pop=NULL)
 
   # Change name
-  # names(df_mr) <- c("codigo_comuna", name_var)
+  names(df_mr) <- c("codigo_comuna", name_var)
   
   return(df_mr)
 }
