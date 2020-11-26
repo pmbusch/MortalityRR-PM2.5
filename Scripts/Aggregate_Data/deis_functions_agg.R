@@ -13,8 +13,6 @@ theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
 ## Adjusted MR ----------------
 # MR adjusted to age groups.
 
-
-
 # Function to get adjusted MR rates
 # Uses population data from Census 2017
 f_adjMR <- function(deaths, population, cause_filter=T, sex_filter=T, name_var="MR_adj"){
@@ -64,20 +62,6 @@ f_adjMR <- function(deaths, population, cause_filter=T, sex_filter=T, name_var="
   return(df_mr)
 }
 
-# all_deaths <- f_adjMR(df_deis, df_population)
-# cardioPulmonar_deaths <- f_adjMR(df_deis, df_population, 
-#                                  cap_diag1 %in% c("J00-J99","I00-I99"),
-#                                  name_var = "CDP_all")
-# cardioPulmonar_male <- f_adjMR(df_deis, df_population, cap_diag1 %in% c("J00-J99","I00-I99"),
-#                                sexo %in% c("Hombre","hombre"),
-#                                name_var = "CDP_male")
-# 
-# a <- left_join(cardioPulmonar_deaths,cardioPulmonar_male)
-# 
-# 
-# cancer_deaths <- f_adjMR(df_deis, df_population, cap_diag1 %in% c("C00-D48"))
-
-
 ## Normal MR ----------------
 # Function to get adjusted MR rates
 # Uses population data from Census 2017
@@ -115,10 +99,5 @@ f_MR <- function(deaths, population,
   
   return(df_mr)
 }
-
-# total_deaths <- f_MR(df_deis,df_population)
-# total_deaths_above30 <- f_MR(df_deis,df_population,
-#                              age_filter = !(age_group %in% c("0-4","5-9","10-14","15-19",
-#                                                              "20-24","25-29")))
 
 ## EoF

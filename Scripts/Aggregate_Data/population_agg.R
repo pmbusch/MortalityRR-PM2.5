@@ -29,6 +29,9 @@ df_population <- df_population %>%
 # df_population %>% group_by(edad, age_group) %>% summarise(count=n()) %>%
 #   arrange(desc(count)) %>% view()
 
+# Population data to use in Deis to estimate MR
+df_population_deis <- df_population
+
 
 # Create major age groups
 df_population <- df_population %>% 
@@ -150,7 +153,7 @@ df_zona <- df_zona %>%
 ## Add to df_poblacion
 df_population <- df_population %>% left_join(df_zona) %>% 
   mutate(density=population/superficie*1e6,
-         urbanDensity=poblacion/superficie_censal*1e6)
+         urbanDensity=population/superficie_censal*1e6)
 rm(df_zona)
 
 

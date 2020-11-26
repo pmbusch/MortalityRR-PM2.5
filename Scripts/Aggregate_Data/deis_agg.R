@@ -58,21 +58,21 @@ f_adjMR_causes <- function(common_df,
                            sex_filter2=T,name_end=""){
   
   # All Causes
-  mrAdj_aux <- f_adjMR(df_deis,df_population,
+  mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
                        cause_filter = is.na(cap_diag2),
                        name_var = paste("mrAdj_AllCauses",name_end,sep=""),
                        sex_filter = {{sex_filter2}})
   common_df <- left_join(common_df, mrAdj_aux, by=c("codigo_comuna")); rm(mrAdj_aux)
   
   # Cardiopulmonary
-  mrAdj_aux <- f_adjMR(df_deis,df_population,
+  mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
                        cause_filter = str_detect(subcateg_diag1,"I|J"),
                        name_var = paste("mrAdj_CDP",name_end,sep=""),
                        sex_filter = {{sex_filter2}})
   common_df <- left_join(common_df, mrAdj_aux, by=c("codigo_comuna")); rm(mrAdj_aux)
   
   ## CVD
-  mrAdj_aux <- f_adjMR(df_deis,df_population,
+  mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
                        cause_filter = str_detect(subcateg_diag1,"I"),
                        name_var = paste("mrAdj_CVD",name_end,sep=""),
                        sex_filter = {{sex_filter2}})
@@ -80,7 +80,7 @@ f_adjMR_causes <- function(common_df,
   
   
   # Respiratory
-  mrAdj_aux <- f_adjMR(df_deis,df_population,
+  mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
                        cause_filter = str_detect(subcateg_diag1,"J"),
                        name_var = paste("mrAdj_RSP",name_end,sep=""),
                        sex_filter = {{sex_filter2}})
@@ -88,7 +88,7 @@ f_adjMR_causes <- function(common_df,
   
   
   # Cancer
-  mrAdj_aux <- f_adjMR(df_deis,df_population,
+  mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
                        cause_filter = str_detect(subcateg_diag1,"C"),
                        name_var = paste("mrAdj_CAN",name_end,sep=""),
                        sex_filter = {{sex_filter2}})
@@ -99,15 +99,15 @@ f_adjMR_causes <- function(common_df,
 
 
 # Use all communes as base
-mrAdj <- data.frame(codigo_comuna=unique(df_population$codigo_comuna))
+mrAdj <- data.frame(codigo_comuna=unique(df_population_deis$codigo_comuna))
 
 # All Gender
-mrAdj <- f_adjMR_causes(mrAdj, df_deis, df_population)
+mrAdj <- f_adjMR_causes(mrAdj, df_deis, df_population_deis)
 # Male
-mrAdj <- f_adjMR_causes(mrAdj, df_deis, df_population, name_end = "_male",
+mrAdj <- f_adjMR_causes(mrAdj, df_deis, df_population_deis, name_end = "_male",
                         sex_filter2 = sexo %in% c("Hombre","hombre"))
 # Female
-mrAdj <- f_adjMR_causes(mrAdj, df_deis, df_population, name_end = "_female",
+mrAdj <- f_adjMR_causes(mrAdj, df_deis, df_population_deis, name_end = "_female",
                         sex_filter2 = sexo %in% c("Mujer","mujer"))
 
 
@@ -120,7 +120,7 @@ f_MR_causes <- function(common_df,
                            name_end=""){
   
   # All Causes
-  mr_aux <- f_MR(df_deis,df_population,
+  mr_aux <- f_MR(df_deis,df_population_deis,
                  cause_filter = is.na(cap_diag2),
                  name_var = paste("mr_AllCauses",name_end,sep=""),
                  sex_filter = {{sex_filter2}},
@@ -128,7 +128,7 @@ f_MR_causes <- function(common_df,
   common_df <- left_join(common_df, mr_aux, by=c("codigo_comuna")); rm(mr_aux)
   
   # Cardiopulmonary
-  mr_aux <- f_MR(df_deis,df_population,
+  mr_aux <- f_MR(df_deis,df_population_deis,
                     cause_filter = str_detect(subcateg_diag1,"I|J"),
                     name_var = paste("mr_CDP",name_end,sep=""),
                     sex_filter = {{sex_filter2}},
@@ -136,7 +136,7 @@ f_MR_causes <- function(common_df,
   common_df <- left_join(common_df, mr_aux, by=c("codigo_comuna")); rm(mr_aux)
   
   ## CVD
-  mr_aux <- f_MR(df_deis,df_population,
+  mr_aux <- f_MR(df_deis,df_population_deis,
                     cause_filter = str_detect(subcateg_diag1,"I"),
                     name_var = paste("mr_CVD",name_end,sep=""),
                     sex_filter = {{sex_filter2}},
@@ -145,7 +145,7 @@ f_MR_causes <- function(common_df,
   
   
   # Respiratory
-  mr_aux <- f_MR(df_deis,df_population,
+  mr_aux <- f_MR(df_deis,df_population_deis,
                     cause_filter = str_detect(subcateg_diag1,"J"),
                     name_var = paste("mr_RSP",name_end,sep=""),
                     sex_filter = {{sex_filter2}},
@@ -154,7 +154,7 @@ f_MR_causes <- function(common_df,
   
   
   # Cancer
-  mr_aux <- f_MR(df_deis,df_population,
+  mr_aux <- f_MR(df_deis,df_population_deis,
                     cause_filter = str_detect(subcateg_diag1,"C"),
                     name_var = paste("mr_CAN",name_end,sep=""),
                     sex_filter = {{sex_filter2}},
@@ -171,22 +171,22 @@ f_MR_causes_Age <- function(common_df,
                             sex_filter3=T,
                             name_end2=""){
   # All ages
-  common_df <- f_MR_causes(common_df, df_deis, df_population,
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
                            sex_filter2 = {{sex_filter3}},
                            name_end = paste(name_end2,"_allAges",sep=""))
   # 30+
-  common_df <- f_MR_causes(common_df, df_deis, df_population,
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
                            sex_filter2 = {{sex_filter3}},
                            name_end = paste(name_end2,"_30plus",sep = ""),
                            age_filter2 = !(age_group %in% c("0-4","5-9","10-14",
                                                             "15-19","20-24","25-29")))
   # 65+
-  common_df <- f_MR_causes(common_df, df_deis, df_population,
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
                            sex_filter2 = {{sex_filter3}},
                            name_end = paste(name_end2,"_65plus",sep = ""),
                            age_filter2 = age_group %in% c("65-69","70-74","75-79","80+"))
   # 75+
-  common_df <- f_MR_causes(common_df, df_deis, df_population,
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
                            sex_filter2 = {{sex_filter3}},
                            name_end = paste(name_end2,"_75plus",sep = ""),
                            age_filter2 = age_group %in% c("75-79","80+"))
@@ -194,21 +194,22 @@ f_MR_causes_Age <- function(common_df,
 }
   
 # Use all communes as base
-mr <- data.frame(codigo_comuna=unique(df_population$codigo_comuna))
+mr <- data.frame(codigo_comuna=unique(df_population_deis$codigo_comuna))
 
 # All gender
-mr <- f_MR_causes_Age(mr, df_deis, df_population)
+mr <- f_MR_causes_Age(mr, df_deis, df_population_deis)
 # Male
-mr <- f_MR_causes_Age(mr, df_deis, df_population, name_end2 = "_male",
+mr <- f_MR_causes_Age(mr, df_deis, df_population_deis, name_end2 = "_male",
                       sex_filter3 = sexo %in% c("Hombre","hombre"))
 # Female
-mr <- f_MR_causes_Age(mr, df_deis, df_population, name_end2 = "_female",
+mr <- f_MR_causes_Age(mr, df_deis, df_population_deis, name_end2 = "_female",
                       sex_filter3 = sexo %in% c("Mujer","mujer"))
 
 
 ## Summary ----------
-mrAdj %>% skim()
-mr %>% skim()
+# mrAdj %>% skim()
+# mr %>% skim()
 
+rm(df_population_deis)
 
 ## EoF

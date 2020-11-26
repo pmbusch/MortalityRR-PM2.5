@@ -8,36 +8,28 @@ source("Scripts/00-Functions.R", encoding = "UTF-8")
 
 ## Relevant indicators ------------
 # Total population in commune with PM2.5 data
-df_modelo %>% filter(!is.na(mp25)) %>% nrow()
-total_pob <- df_modelo$poblacion %>% sum()
-pob_mp25 <- df_modelo %>% filter(!is.na(mp25)) %>% pull(poblacion) %>% sum()
+data_model %>% filter(!is.na(mp25)) %>% nrow()
+total_pob <- data_model$population %>% sum()
+pob_mp25 <- data_model %>% filter(!is.na(mp25)) %>% pull(population) %>% sum()
 cat(round(pob_mp25/total_pob*100,1),
     "% population in communes with PM2.5 exposure estimated")
 
 
-df_modelo <- df_modelo %>% 
-  mutate(MR_allCauses=def_allCauses/poblacion*1e5,
-         MR_CVD=def_cardio/poblacion*1e5,
-         MR_pulmonary=def_pulmonar/poblacion*1e5,
-         MR_cardioPulmonary=def_cardioPulmonar/poblacion*1e5,
-         MR_cancer=def_cancer/poblacion*1e5)
-
-
 # TABLE ALL COMMUNES: With and without PM2.5 ---------------
-df_modelo %>% names()
-df <- df_modelo %>% 
+data_model %>% names()
+df <- data_model %>% 
   mutate(perc_fonasa=perc_fonasa_A+perc_fonasa_B+perc_fonasa_C+perc_fonasa_D,
-         poblacion=poblacion/1e3,
-         ingresoTotal_mediana=ingresoTotal_mediana/1e3) %>% 
-  select(MR_allCauses,MR_cardioPulmonary,MR_CVD,MR_pulmonary,MR_cancer, 
+         population=population/1e3,
+         income_median=income_median/1e3) %>% 
+  select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN, 
          mp25, mp10,
-         poblacion,densidad_pob_censal, `15-44`, `45-64`, `65+`,perc_mujer, 
-         perc_rural, perc_puebloOrig,perc_vivHacMedio,
-         tasa_camas,
-         ingresoTotal_mediana,perc_menor_media, perc_ocupado, perc_salud,
+         population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
+         perc_rural, perc_ethnicityOrig,perc_overcrowding_medium,
+         rate_hospitalBeds,
+         income_median,perc_less_highschool, perc_occupancy, perc_health,
          perc_isapre, perc_fonasa_D,perc_fonasa_C,
          perc_fonasa_B, perc_fonasa_A, 
-         perc_lenaCocina,perc_lenaCalefaccion,perc_lenaAgua,
+         perc_woodCooking,perc_woodHeating,perc_woodWarmWater,
          hr_summer, hr_winter, tmed_summer, tmed_winter,
          heating_degree_15_summer, heating_degree_15_winter)
 
@@ -57,8 +49,8 @@ df_skim <- df %>% skim() %>%
   select(skim_variable,n, indicator) %>% 
   left_join(df_sep)
 
-n_mp25 <- df_modelo %>% filter(!is.na(mp25)) %>% nrow()
-foot_note <- paste("n:",c(nrow(df_modelo),nrow(df_modelo)-n_mp25,
+n_mp25 <- data_model %>% filter(!is.na(mp25)) %>% nrow()
+foot_note <- paste("n:",c(nrow(data_model),nrow(data_model)-n_mp25,
                           n_mp25),"communes",sep=" ")
 
 # Cambio nombre variables
@@ -68,7 +60,8 @@ df_skim <- df_skim %>%
            str_replace("Population","Population [thousands]") %>% 
            str_replace("Median monthly income per capita",
                        "Median monthly income per capita [thousands $CLP]") %>% 
-           str_replace_all("\\) \\[per 100,000\\]","\\)")) %>% 
+           str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
+           str_remove_all("Adjusted mortality rate")) %>% 
   arrange(Type)
 
 df_skim <- df_skim[,c(6,1,2,3,4,5)] # Reorder columns
@@ -76,7 +69,7 @@ df_skim <- df_skim[,c(6,1,2,3,4,5)] # Reorder columns
 df_skim %>% 
   rename(Variable=skim_variable, Total=indicator, 
          `Without PM2.5`=no, `With PM2.5`=si) %>% 
-  mutate(Type=Type %>% str_replace("Mortality","Mortality \n [per 100,000]")) %>% 
+  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000]")) %>% 
   flextable() %>% 
   bold(bold=T, part="header") %>% bold(j=1:2, bold=T) %>% 
   autofit(add_w = 0.1, add_h = 0.3) %>%
@@ -106,9 +99,9 @@ df_skim <- df %>%
   select(skim_variable, numeric.mean, cv,
          numeric.p0, numeric.p50, numeric.p100) %>% 
   rename(Variable=skim_variable,
-         Promedio=numeric.mean,
+         Mean=numeric.mean,
          `C.V.`=cv,
-         Min=numeric.p0, Mediana=numeric.p50, Max=numeric.p100)
+         Min=numeric.p0, Median=numeric.p50, Max=numeric.p100)
 
 # Cambio nombre variables
 df_skim <- df_skim %>% 
@@ -117,13 +110,14 @@ df_skim <- df_skim %>%
            str_replace("Population","Population [thousands]") %>% 
            str_replace("Median monthly income per capita",
                        "Median monthly income per capita [thousands $CLP]") %>% 
-         str_replace_all("\\) \\[per 100,000\\]","\\)")) %>% 
+         str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
+           str_remove_all("Adjusted mortality rate")) %>% 
   arrange(Type)
 df_skim <- df_skim[,c(7,1,2,3,4,5,6)] # Reorder columns
 
 
 df_skim %>% 
-  mutate(Type=Type %>% str_replace("Mortality","Mortality \n [per 100,000]")) %>% 
+  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000]")) %>% 
   flextable() %>% 
   colformat_num(big.mark=" ", digits=1, j=3:ncol(df_skim),
                 na_str="s/i") %>%
@@ -174,7 +168,8 @@ df_skim <- df_skim %>%
            str_replace("Population","Population [thousands]") %>% 
            str_replace("Median monthly income per capita",
                        "Median monthly income per capita [thousands $CLP]") %>% 
-           str_replace_all("\\) \\[per 100,000\\]","\\)")) %>% 
+           str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
+           str_remove_all("Adjusted mortality rate")) %>% 
   arrange(Type)
 
 df_skim <- df_skim[,c(5,1,2,3,4)] # Reorder columns
@@ -182,7 +177,7 @@ df_skim <- df_skim[,c(5,1,2,3,4)] # Reorder columns
 df_skim %>% 
   rename(Variable=skim_variable, Total=indicator, 
          `Below 20 ug/m3`=no, `Above 20 ug/m3`=si) %>% 
-  mutate(Type=Type %>% str_replace("Mortality","Mortality \n [per 100,000]")) %>% 
+  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000]")) %>% 
   flextable() %>% 
   bold(bold=T, part="header") %>% bold(j=1:2, bold=T) %>% 
   autofit(add_w = 0.1, add_h = 0.3) %>%
@@ -197,7 +192,6 @@ df_skim %>%
            ref_symbols = c("a", "b", "c")) 
 # print(preview="docx")
 # print(preview="pptx")
-
 
 
 ## EoF
