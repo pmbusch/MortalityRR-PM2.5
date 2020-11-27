@@ -16,9 +16,6 @@ data_model <- data_model %>%
          mp25_10um=mp25/10, # to see RR increase per 10 ug/m3
          mp10_minus25=mp10-mp25)
 
-
-
-
 ## Fill NA ----------
 # Hospital beds: Not all communes have beds: default=0
 # tasa_mortalidadAll: no hubo muertes en el periodo temporal elegido: defecto=0
