@@ -16,6 +16,44 @@ data_model <- data_model %>%
          mp25_10um=mp25/10, # to see RR increase per 10 ug/m3
          mp10_minus25=mp10-mp25)
 
+# Generate deaths as count number
+data_model <- data_model %>% 
+  mutate(deathsAdj_CDP=mrAdj_CDP*population/1e5,
+         deathsAdj_CDP=as.integer(deathsAdj_CDP),
+         deathsAdj_AllCauses=mrAdj_AllCauses*population/1e5,
+         deathsAdj_AllCauses=as.integer(deathsAdj_AllCauses),
+         deathsAdj_CVD=mrAdj_CVD*population/1e5,
+         deathsAdj_CVD=as.integer(deathsAdj_CVD),
+         deathsAdj_RSP=mrAdj_RSP*population/1e5,
+         deathsAdj_RSP=as.integer(deathsAdj_RSP),
+         deathsAdj_CAN=mrAdj_CAN*population/1e5,
+         deathsAdj_CAN=as.integer(deathsAdj_CAN))
+
+# Male and Female
+data_model <- data_model %>% 
+  mutate(deathsAdj_CDP_male=mrAdj_CDP_male*population/1e5,
+         deathsAdj_CDP_male=as.integer(deathsAdj_CDP_male),
+         deathsAdj_AllCauses_male=mrAdj_AllCauses_male*population/1e5,
+         deathsAdj_AllCauses_male=as.integer(deathsAdj_AllCauses_male),
+         deathsAdj_CVD_male=mrAdj_CVD_male*population/1e5,
+         deathsAdj_CVD_male=as.integer(deathsAdj_CVD_male),
+         deathsAdj_RSP_male=mrAdj_RSP_male*population/1e5,
+         deathsAdj_RSP_male=as.integer(deathsAdj_RSP_male),
+         deathsAdj_CAN_male=mrAdj_CAN_male*population/1e5,
+         deathsAdj_CAN_male=as.integer(deathsAdj_CAN_male))
+data_model <- data_model %>% 
+  mutate(deathsAdj_CDP_female=mrAdj_CDP_female*population/1e5,
+         deathsAdj_CDP_female=as.integer(deathsAdj_CDP_female),
+         deathsAdj_AllCauses_female=mrAdj_AllCauses_female*population/1e5,
+         deathsAdj_AllCauses_female=as.integer(deathsAdj_AllCauses_female),
+         deathsAdj_CVD_female=mrAdj_CVD_female*population/1e5,
+         deathsAdj_CVD_female=as.integer(deathsAdj_CVD_female),
+         deathsAdj_RSP_female=mrAdj_RSP_female*population/1e5,
+         deathsAdj_RSP_female=as.integer(deathsAdj_RSP_female),
+         deathsAdj_CAN_female=mrAdj_CAN_female*population/1e5,
+         deathsAdj_CAN_female=as.integer(deathsAdj_CAN_female))
+
+
 ## Fill NA ----------
 # Hospital beds: Not all communes have beds: default=0
 # tasa_mortalidadAll: no hubo muertes en el periodo temporal elegido: defecto=0
@@ -38,7 +76,7 @@ data_model %>% skim()
 
 ## Save Data -------
 cat('sep=; \n',file = "Data/Data_Model/Data_Model.csv")
-write.table(data_model %>% select(-geometry),"Data/Data_Model/Data_Model.csv",
+write.table(data_model %>% dplyr::select(-geometry),"Data/Data_Model/Data_Model.csv",
             sep=';',row.names = F, append = T)
 
 saveRDS(data_model, "Data/Data_Model/Data_model.rsd")

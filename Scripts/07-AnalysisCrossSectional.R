@@ -1,69 +1,78 @@
-### Analisis-COVID-MP2.5
-## Analisis Transversal Mortalidad todas las Causas
-## PBH Septiembre 2020
+### MortalityRR-PM2.5
+## Cross sectional ecological study
+## PBH NOV 2020
 
-## Librerias ------
+## Load Data ------
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
 file_name <- "Figuras/Analisis_Transversal/Modelos_Mortalidad_All/%s.png"
 file_mod <- "Data/Data_Modelo/Modelos_AllCauses/%s.rsd"
-source("Scripts/00-Funciones.R", encoding = "UTF-8")
-source("Scripts/05-FuncionesAnalisisTransversal.R", encoding = "UTF-8")
+source("Scripts/00-Functions.R", encoding = "UTF-8")
+source("Scripts/05-FunctionsCrossSectional.R", encoding = "UTF-8")
 
 library(MASS)
 library(lme4)
 library(glmmTMB)
 library(gamm4)
+library(ggfortify)
 
-## Variables adicionales ---------
-df_modelo %>% names() %>% sort()
-df <- df_modelo %>% 
-  mutate(mp25_10um=mp25/10, # para ver aumento en RR por 10ug/m3
-         mp10_minus25=mp10-mp25)
+df <- data_model
 
 
-df_modelo %>% 
-  mutate(tasa_mortalidad=def_cardioPulmonar/poblacion*1e5) %>% 
-  summarise(mean_tasa=mean(tasa_mortalidad,na.rm=T),
-            var_tasa=var(tasa_mortalidad,na.rm=T),
-            sd_tasa=sd(tasa_mortalidad, na.rm = T))
-
-
-
-
-
-
-
-
-## Modelo Base. Y= Causas Cardiopulmonares -------------
-# Notar que es poisson
-mod_nb <- glm(def_cardioPulmonar ~ mp25_10um +
-                mp10_minus25+
-                scale(densidad_pob_censal) +
-                scale(`15-44`) + scale(`65+`) +
-                scale(perc_mujer) +
-                scale(perc_puebloOrig) +
+# Base Model. Y= CDP -------------
+# Poisson distribution
+mod_poisson <- glm(deathsAdj_CDP ~ mp25_10um +
+                scale(urbanDensity) +
+                scale(perc_female) +
+                scale(perc_ethnicityOrig) +
                 scale(perc_rural) +
-                scale(tasa_camas) +
-                scale(perc_lenaCalefaccion) +
-                scale(log(ingresoAutonomo_media)) + scale(perc_menor_media) +
+                scale(rate_hospitalBeds) +
+                scale(perc_woodHeating) +
+                scale(log(income_median)) + scale(perc_less_highschool) +
                 scale(perc_fonasa_A) + scale(perc_fonasa_D) +
-                scale(perc_vivHacMedio)+
+                scale(perc_overcrowding_medium)+
                 scale(hr_anual) +
                 scale(heating_degree_15_winter) +
-                offset(log(poblacion)), 
+                offset(log(population)), 
               data = df,
               family = poisson(link=log),
               na.action=na.omit)
 
+summary(mod_poisson)
+nobs(mod_poisson)
+f_tableMRR(mod_poisson, preview = "none", highlight = T)
+f_figMRR(mod_poisson)
+autoplot(mod_poisson) # Residuals and regression fit plot
+gam::plot.Gam(mod_poisson,se=T,rug=T)
+# f_savePlot(last_plot(), sprintf(file_name,"CardioPulmonar_Base"),dpi=150)
+# saveRDS(mod_poisson, sprintf(file_mod,"CardioPulmonar_Base"))
+rm(mod_poisson)
+
+## Model Binomial -------------
+mod_nb <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                     # mp10_minus25+
+                     scale(urbanDensity) +
+                     scale(perc_female) +
+                     scale(perc_ethnicityOrig) +
+                     scale(perc_rural) +
+                     scale(rate_hospitalBeds) +
+                     scale(perc_woodHeating) +
+                     scale(log(income_median)) + scale(perc_less_highschool) +
+                     scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                     scale(perc_overcrowding_medium)+
+                     scale(hr_anual) +
+                     scale(heating_degree_15_winter) +
+                     offset(log(population)), 
+                   data = df,
+                   na.action=na.omit)
+
 summary(mod_nb)
 nobs(mod_nb)
-plot(mod_nb)
-gam::plot.Gam(mod_nb,se=T,rug=T)
 f_tableMRR(mod_nb, preview = "none", highlight = T)
 f_figMRR(mod_nb)
-f_savePlot(last_plot(), sprintf(file_name,"CardioPulmonar_Base"),dpi=150)
-saveRDS(mod_nb, sprintf(file_mod,"CardioPulmonar_Base"))
-rm(mod_nb)
+
+# Comparison nb vs poisson
+anova(mod_poisson, mod_nb)
+# no statistical difference
 
 
 

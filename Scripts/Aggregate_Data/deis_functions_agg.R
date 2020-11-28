@@ -5,7 +5,7 @@
 # Load Data ---------
 source("Scripts/Load_Data/deis_load.R", encoding = "UTF-8")
 # source("Scripts/Load_Data/map_load.R", encoding = "UTF-8")
-# source("Scripts/Aggregate_Data/poblacion_agg.R", encoding = "UTF-8")
+source("Scripts/Aggregate_Data/population_agg.R", encoding = "UTF-8")
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
 
 ## Note: Gets MR using data from deaths 2017-2019 and population from 2019
@@ -92,12 +92,14 @@ f_MR <- function(deaths, population,
   # Calculate MR
   df_mr <- deaths %>% 
     mutate(mr=total_deaths/pop*1e5,
+           deaths=as.integer(total_deaths),
            total_deaths=NULL, pop=NULL)
 
   # Change name
-  names(df_mr) <- c("codigo_comuna", name_var)
+  names(df_mr) <- c("codigo_comuna", name_var,str_replace(name_var,"mr|MR","deaths"))
   
   return(df_mr)
 }
+
 
 ## EoF

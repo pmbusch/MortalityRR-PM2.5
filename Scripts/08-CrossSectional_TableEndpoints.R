@@ -16,23 +16,8 @@ library(gamm4)
 library(ggfortify)
 
 
-# Generate deaths as count number
-df <- data_model %>% 
-  mutate(deaths_CDP=mrAdj_CDP*population/1e5,
-         deaths_CDP=as.integer(deaths_CDP),
-         deaths_AllCauses=mrAdj_AllCauses*population/1e5,
-         deaths_AllCauses=as.integer(deaths_AllCauses),
-         deaths_CVD=mrAdj_CVD*population/1e5,
-         deaths_CVD=as.integer(deaths_CVD),
-         deaths_RSP=mrAdj_RSP*population/1e5,
-         deaths_RSP=as.integer(deaths_RSP),
-         deaths_CAN=mrAdj_CAN*population/1e5,
-         deaths_CAN=as.integer(deaths_CAN))
-
-
-
 # Base Model Formula ----------------
-formula_initial <- formula(deaths_CDP ~ 
+formula_initial <- formula(deathsAdj_CDP ~ 
                              mp25_10um +
                              scale(urbanDensity) +
                              scale(perc_female) +
@@ -49,8 +34,8 @@ formula_initial <- formula(deaths_CDP ~
 
 
 ## Run models with different endpoint ------------
-endpoints <- c("deaths_CDP", "deaths_AllCauses","deaths_CVD",
-               "deaths_RSP", "deaths_CAN")
+endpoints <- c("deathsAdj_CDP", "deathsAdj_AllCauses","deathsAdj_CVD",
+               "deathsAdj_RSP", "deathsAdj_CAN")
 
 # mod_CDP <- glm(reformulate(deparse(formula_initial[[3]]), response = "deaths_CDP"), 
 #                data = df, na.action=na.omit, family=poisson(link=log))
