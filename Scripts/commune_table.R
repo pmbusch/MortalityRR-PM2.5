@@ -8,12 +8,12 @@
 df <- data_model %>% 
   filter(!is.na(mp25)) %>% 
   arrange(desc(mp25)) %>% 
-  mutate(Latitud=map_dbl(geometry, ~st_centroid(.x)[[2]]))
+  mutate(Latitude=map_dbl(geometry, ~st_centroid(.x)[[2]]))
 
 
 # Select variables to shown
 df <- df %>% 
-  select(nombre_comuna, region,Latitud, mp25, population, mrAdj_CDP, mrAdj_CAN, 
+  select(nombre_comuna, region,Latitude, mp25, population, mrAdj_CDP, mrAdj_CAN, 
          income_median, perc_woodHeating) %>% 
   mutate(population=population/1e3,
          income_median=income_median/1e3)

@@ -4,6 +4,7 @@
 
 ## Load Data ------
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
+load('.RData')
 file_name <- "Figuras/Analisis_Transversal/Modelos_Mortalidad_All/%s.png"
 file_mod <- "Data/Data_Modelo/Modelos_AllCauses/%s.rsd"
 source("Scripts/00-Functions.R", encoding = "UTF-8")
@@ -15,27 +16,30 @@ library(glmmTMB)
 library(gamm4)
 library(ggfortify)
 
-df <- data_model
-
+df <- data_model %>% arrange(population)
 
 # Base Model. Y= CDP -------------
 # Poisson distribution
 mod_poisson <- glm(deathsAdj_CDP ~ mp25_10um +
-                scale(urbanDensity) +
-                scale(perc_female) +
-                scale(perc_ethnicityOrig) +
-                scale(perc_rural) +
-                scale(rate_hospitalBeds) +
-                scale(perc_woodHeating) +
-                scale(log(income_median)) + scale(perc_less_highschool) +
-                scale(perc_fonasa_A) + scale(perc_fonasa_D) +
-                scale(perc_overcrowding_medium)+
-                scale(hr_anual) +
-                scale(heating_degree_15_winter) +
-                offset(log(population)), 
-              data = df,
-              family = poisson(link=log),
-              na.action=na.omit)
+                     scale(urbanDensity) +
+                     scale(perc_female) +
+                     scale(perc_ethnicityOrig) +
+                     scale(perc_rural) +
+                     scale(rate_hospitalBeds) +
+                     scale(perc_woodHeating) +
+                     scale(log(income_median)) + scale(perc_less_highschool) +
+                     scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                     # scale(perc_isapre)+
+                     # scale(perc_health)+
+                     # scale(perc_occupancy)+
+                     scale(perc_overcrowding_medium)+
+                     scale(hr_anual) +
+                     scale(heating_degree_15_winter) +
+                     offset(log(population)), 
+                   data = df,
+                   family = poisson(link=log),
+                   # weights = log(population),
+                   na.action=na.omit)
 
 summary(mod_poisson)
 nobs(mod_poisson)
@@ -45,7 +49,17 @@ autoplot(mod_poisson) # Residuals and regression fit plot
 gam::plot.Gam(mod_poisson,se=T,rug=T)
 # f_savePlot(last_plot(), sprintf(file_name,"CardioPulmonar_Base"),dpi=150)
 # saveRDS(mod_poisson, sprintf(file_mod,"CardioPulmonar_Base"))
-rm(mod_poisson)
+# rm(mod_poisson)
+
+# heteroscedasticity test
+library(lmtest)
+# Breusch-Pagan test
+bptest(mod_poisson)
+# Goldfeld-Quandt test: n* equals to 3/8 of the data used
+# Sorted by population
+gqtest(mod_poisson, fraction= 2/8*nobs(mod_poisson), point= 0.5,
+       alternative = "greater")
+
 
 ## Model Binomial -------------
 mod_nb <- glm.nb(deathsAdj_CDP ~ mp25_10um +
@@ -76,262 +90,122 @@ anova(mod_poisson, mod_nb)
 
 
 
-## Modelo Base Sign. Y= Causas CardioPulmonares -------------
-mod_nb_sign <- glm(def_cardioPulmonar ~ 
-                     mp25_10um +
-                     scale(`65+`) +
-                     scale(log(ingresoAutonomo_media)) + 
-                     scale(perc_menor_media) +
-                     scale(perc_vivHacMedio)+
+## Base Model only Sign -------------
+mod_poisson_sign <-glm(deathsAdj_CDP ~ mp25_10um +
+                    scale(urbanDensity) +
+                    scale(rate_hospitalBeds) +
+                    scale(perc_woodHeating) +
+                    scale(log(income_median)) +
+                    scale(perc_fonasa_D) +
+                    scale(perc_overcrowding_medium)+
+                    offset(log(population)), 
+                  data = df,
+                  family = poisson(link=log),
+                  na.action=na.omit)
+
+summary(mod_poisson_sign)
+nobs(mod_poisson_sign)
+f_tableMRR(mod_poisson_sign, preview = "none", highlight = T)
+f_figMRR(mod_poisson_sign)
+
+
+
+## Base Model  Quartile PM2.5 -------------
+df_quartile <- data_model %>% 
+  filter(!is.na(mp25_10um)) %>% 
+  mutate(quartile_pm25=qgroup(mp25_10um, 4))
+df_quartile$quartile_pm25 %>% table()
+
+label_cuartil <- df_quartile %>% group_by(quartile_pm25) %>% 
+  summarise(count=n(), mean_mp25=mean(mp25_10um,na.rm=T),
+            min_mp=min(mp25_10um,na.rm=T) %>% round(1),
+            max_mp=max(mp25_10um,na.rm=T) %>% round(1)) %>% 
+  ungroup() %>% 
+  mutate(cuartil_label=paste(quartile_pm25,"\n [",min_mp," - ",max_mp,"]",sep=""))
+df_quartile <- df_quartile %>% left_join(label_cuartil, by=c("quartile_pm25"))
+df_quartile$cuartil_label %>% table()
+
+mod_poisson_quartile <- glm(deathsAdj_CDP ~ quartile_pm25 +
+                              scale(urbanDensity) +
+                              scale(perc_female) +
+                              scale(perc_ethnicityOrig) +
+                              scale(perc_rural) +
+                              scale(rate_hospitalBeds) +
+                              scale(perc_woodHeating) +
+                              scale(log(income_median)) + scale(perc_less_highschool) +
+                              scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                              scale(perc_overcrowding_medium)+
+                              scale(hr_anual) +
+                              scale(heating_degree_15_winter) +
+                              offset(log(population)), 
+                            data = df_quartile,
+                            family = poisson(link=log),
+                            na.action=na.omit)
+
+summary(mod_poisson_quartile)
+nobs(mod_poisson_quartile)
+f_tableMRR(mod_poisson_quartile, preview = "none", highlight = T)
+f_figMRR(mod_poisson_quartile)
+# rm(mod_poisson_quartile)
+
+
+## Model with dummy if has monitor ------------------
+df <- df %>% 
+  mutate(hasMonitor=!is.na(mp25))
+
+mod_poisson_dummy <- glm(deathsAdj_CDP ~ hasMonitor +
+                              scale(urbanDensity) +
+                              scale(perc_female) +
+                              scale(perc_ethnicityOrig) +
+                              scale(perc_rural) +
+                              scale(rate_hospitalBeds) +
+                              scale(perc_woodHeating) +
+                              scale(log(income_median)) + scale(perc_less_highschool) +
+                              scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                              scale(perc_overcrowding_medium)+
+                              # scale(hr_anual) +
+                              # scale(heating_degree_15_winter) +
+                              offset(log(population)), 
+                            data = df,
+                            family = poisson(link=log),
+                            na.action=na.omit)
+
+summary(mod_poisson_dummy)
+nobs(mod_poisson_dummy)
+f_tableMRR(mod_poisson_dummy, preview = "none", highlight = T)
+f_figMRR(mod_poisson_dummy)
+# rm(mod_poisson_dummy)
+
+
+## Interaction with wood ---------------
+mod_poisson_interaction <- glm(deathsAdj_CDP ~ mp25_10um*scale(perc_woodHeating) +
+                     scale(urbanDensity) +
+                     scale(perc_female) +
+                     scale(perc_ethnicityOrig) +
+                     scale(perc_rural) +
+                     scale(rate_hospitalBeds) +
+                     # scale(perc_woodHeating) +
+                     scale(log(income_median)) + scale(perc_less_highschool) +
+                     scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                     scale(perc_overcrowding_medium)+
+                     scale(hr_anual) +
                      scale(heating_degree_15_winter) +
-                     offset(log(poblacion)), 
+                     offset(log(population)), 
                    data = df,
-                   family=poisson(link=log),
+                   family = poisson(link=log),
                    na.action=na.omit)
 
-summary(mod_nb_sign)
-nobs(mod_nb_sign)
-anova(mod_nb_sign)
-f_tableMRR(mod_nb_sign, preview = "none")
-f_figMRR(mod_nb_sign)
-f_savePlot(last_plot(), sprintf(file_name,"CardioPulmonar"),dpi=150)
-saveRDS(mod_nb_sign, sprintf(file_mod,"CardioPulmonar"))
-rm(mod_nb_sign)
+summary(mod_poisson_interaction)
+nobs(mod_poisson_interaction)
+f_tableMRR(mod_poisson_interaction, preview = "none", highlight = T)
+f_figMRR(mod_poisson_interaction)
+autoplot(mod_poisson_interaction) # Residuals and regression fit plot
+gam::plot.Gam(mod_poisson_interaction,se=T,rug=T)
+# Marginal effect
+# library(margins)
+# margins(mod_poisson_interaction)
+# cplot(mod_poisson_interaction, "mp25_10um")
 
-## Modelo Base Sign. Y= Causas CardioPulmonares 65+ -------------
-mod_nb_sign_65 <- glm(def_cardioPulmonar_65 ~ 
-                        mp25_10um +
-                        scale(log(ingresoAutonomo_media)) + 
-                        scale(perc_menor_media) +
-                        scale(perc_vivHacMedio)+
-                        scale(heating_degree_15_winter) +
-                        offset(log(poblacion*`65+`)), 
-                      data = df,
-                      family=poisson(link=log),
-                      na.action=na.omit)
-
-summary(mod_nb_sign_65)
-nobs(mod_nb_sign_65)
-anova(mod_nb_sign_65)
-f_tableMRR(mod_nb_sign_65, preview = "none")
-f_figMRR(mod_nb_sign_65)
-f_savePlot(last_plot(), sprintf(file_name,"CardioPulmonar_Mayor65"),dpi=150)
-saveRDS(mod_nb_sign_65, sprintf(file_mod,"CardioPulmonar_Mayor65"))
-rm(mod_nb_sign_65)
-
-
-## Modelo Base Sign. Y= Causas CardioPulmonares. Quartile PM2.5 -------------
-df_cuartil <- df_modelo %>% 
-  filter(!is.na(mp25)) %>% 
-  mutate(cuartil_mp25=qgroup(mp25, 4))
-df_cuartil$cuartil_mp25 %>% table()
-
-label_cuartil <- df_cuartil %>% group_by(cuartil_mp25) %>% 
-  summarise(count=n(), mean_mp25=mean(mp25,na.rm=T),
-            min_mp=min(mp25,na.rm=T) %>% round(1),
-            max_mp=max(mp25,na.rm=T) %>% round(1)) %>% 
-  ungroup() %>% 
-  mutate(cuartil_label=paste(cuartil_mp25,"\n [",min_mp," - ",max_mp,"]",sep=""))
-df_cuartil <- df_cuartil %>% left_join(label_cuartil, by=c("cuartil_mp25"))
-df_cuartil$cuartil_label %>% table()
-
-mod_nb_sign_q <- glm(def_cardioPulmonar ~ 
-                       cuartil_label +
-                       scale(`15-44`) + scale(`65+`) +
-                       scale(perc_rural) +
-                       scale(perc_lenaCalefaccion) +
-                       scale(log(ingresoAutonomo_media)) + 
-                       scale(perc_menor_media) +
-                       scale(perc_vivHacMedio)+
-                       scale(tmed_anual) +
-                       scale(heating_degree_15_winter) +
-                       offset(log(poblacion)), 
-                     data = df_cuartil,
-                     family=poisson(link=log),
-                     na.action=na.omit)
-
-summary(mod_nb_sign_q)
-nobs(mod_nb_sign_q)
-anova(mod_nb_sign_q)
-f_tableMRR(mod_nb_sign_q, preview = "none")
-f_figMRR(mod_nb_sign_q)
-rm(mod_nb_sign_q)
-
-
-## Modelo Base ---------
-formula_base <- formula(def_cardioPulmonar ~ 
-                          mp25_10um +
-                          scale(`65+`) +
-                          scale(log(ingresoAutonomo_media)) + 
-                          scale(perc_menor_media) +
-                          scale(perc_vivHacMedio)+
-                          scale(heating_degree_15_winter) +
-                          offset(log(poblacion)))
-                         
-reformulate(deparse(formula_base[[3]]), response = "def_cardio")
-
-## MODELOS CON DISTINTA CAUSA DE DEFUNCION --------------
-# Total deaths ----------
-mod_total <- glm(reformulate(deparse(formula_base[[3]]), response = "def_total"), 
-           data = df,
-           na.action=na.omit,
-           family=poisson(link=log))
-
-summary(mod_total)
-nobs(mod_total)
-f_tableMRR(mod_total, preview = "none")
-f_figMRR(mod_total)
-f_savePlot(last_plot(), sprintf(file_name,"Total"),dpi=150)
-saveRDS(mod_total, sprintf(file_mod,"Total"))
-rm(mod_total)
-
-# All Cause deaths (no external) ----------
-mod_allCauses <- glm(reformulate(deparse(formula_base[[3]]), response = "def_allCauses"), 
-                 data = df,
-                 na.action=na.omit,
-                 family=poisson(link=log))
-
-summary(mod_allCauses)
-nobs(mod_allCauses)
-f_tableMRR(mod_allCauses, preview = "none")
-f_figMRR(mod_allCauses)
-f_savePlot(last_plot(), sprintf(file_name,"AllCauses"),dpi=150)
-saveRDS(mod_allCauses, sprintf(file_mod,"AllCauses"))
-rm(mod_allCauses)
-
-
-# External Cause deaths ----------
-mod_extCauses <- glm(reformulate(deparse(formula_base[[3]]), response = "def_extCauses"), 
-                    data = df,
-                    na.action=na.omit,
-                    family=poisson(link=log))
-
-summary(mod_extCauses)
-nobs(mod_extCauses)
-f_tableMRR(mod_extCauses, preview = "none")
-f_figMRR(mod_extCauses)
-f_savePlot(last_plot(), sprintf(file_name,"ExtCauses"),dpi=150)
-saveRDS(mod_extCauses, sprintf(file_mod,"ExtCauses"))
-rm(mod_extCauses)
-
-# Cardio ----------
-mod_cardio <- glm(reformulate(deparse(formula_base[[3]]), response = "def_cardio"), 
-                     data = df,
-                     na.action=na.omit,
-                     family=poisson(link=log))
-
-summary(mod_cardio)
-nobs(mod_cardio)
-f_tableMRR(mod_cardio, preview = "none")
-f_figMRR(mod_cardio)
-f_savePlot(last_plot(), sprintf(file_name,"Cardio"),dpi=150)
-saveRDS(mod_cardio, sprintf(file_mod,"Cardio"))
-rm(mod_cardio)
-
-# Pulmonar ----------
-mod_pulmonar <- glm(reformulate(deparse(formula_base[[3]]), response = "def_pulmonar"), 
-                     data = df,
-                     na.action=na.omit,
-                     family=poisson(link=log))
-
-summary(mod_pulmonar)
-nobs(mod_pulmonar)
-f_tableMRR(mod_pulmonar, preview = "none")
-f_figMRR(mod_pulmonar)
-f_savePlot(last_plot(), sprintf(file_name,"Pulmonar"),dpi=150)
-saveRDS(mod_pulmonar, sprintf(file_mod,"Pulmonar"))
-rm(mod_pulmonar)
-
-# Cancer ----------
-mod_cancer <- glm(reformulate(deparse(formula_base[[3]]), response = "def_cancer"), 
-                     data = df,
-                     na.action=na.omit,
-                     family=poisson(link=log))
-
-summary(mod_cancer)
-nobs(mod_cancer)
-f_tableMRR(mod_cancer, preview = "none")
-f_figMRR(mod_cancer)
-f_savePlot(last_plot(), sprintf(file_name,"Cancer"),dpi=150)
-saveRDS(mod_cancer, sprintf(file_mod,"Cancer"))
-rm(mod_cancer)
-
-
-
-## Loop 65+ -------------
-causas <- c("def_total_65", "def_allCauses_65", "def_extCauses_65", "def_cardio_65",
-            "def_pulmonar_65", "def_cancer_65","def_cardioPulmonar_65")
-
-formula_base <- formula(def_cardioPulmonar_65 ~ 
-                          mp25_10um +
-                          scale(log(ingresoAutonomo_media)) + 
-                          scale(perc_menor_media) +
-                          scale(perc_vivHacMedio)+
-                          scale(heating_degree_15_winter) +
-                          offset(log(poblacion*`65+`)))
-
-for (c in causas){
-  file_path <- paste(str_remove_all(c,"def_|_65"),"_mayor65",sep="")
-  cat("Causa: ",c," File: ",file_path,"\n",sep="")
-  mod <- glm(reformulate(deparse(formula_base[[3]]), response = c), 
-                    data = df,
-                    na.action=na.omit,
-                    family=poisson(link=log))
-  f_savePlot(last_plot(), sprintf(file_name,file_path),dpi=150)
-  saveRDS(mod, sprintf(file_mod,file_path))
-  rm(mod,file_path)
-}
-rm(c)
-
-## Loop 75+ -------------
-causas <- c("def_total_75", "def_allCauses_75", "def_extCauses_75", "def_cardio_75",
-            "def_pulmonar_75", "def_cancer_75","def_cardioPulmonar_75")
-
-formula_base <- formula(def_cardioPulmonar_75 ~ 
-                          mp25_10um +
-                          scale(log(ingresoAutonomo_media)) + 
-                          scale(perc_menor_media) +
-                          scale(perc_vivHacMedio)+
-                          scale(heating_degree_15_winter) +
-                          offset(log(poblacion*`75+`)))
-
-for (c in causas){
-  file_path <- paste(str_remove_all(c,"def_|_75"),"_mayor75",sep="")
-  cat("Causa: ",c," File: ",file_path,"\n",sep="")
-  mod <- glm(reformulate(deparse(formula_base[[3]]), response = c), 
-             data = df,
-             na.action=na.omit,
-             family=poisson(link=log))
-  f_savePlot(last_plot(), sprintf(file_name,file_path),dpi=150)
-  saveRDS(mod, sprintf(file_mod,file_path))
-  rm(mod,file_path)
-}
-rm(c)
-
-## Loop 30+ -------------
-causas <- c("def_total_30", "def_allCauses_30", "def_extCauses_30", "def_cardio_30",
-            "def_pulmonar_30", "def_cancer_30","def_cardioPulmonar_30")
-
-formula_base <- formula(def_cardioPulmonar_30 ~ 
-                          mp25_10um +
-                          scale(log(ingresoAutonomo_media)) + 
-                          scale(perc_menor_media) +
-                          scale(perc_vivHacMedio)+
-                          scale(heating_degree_15_winter) +
-                          offset(log(poblacion*`30+`)))
-
-for (c in causas){
-  file_path <- paste(str_remove_all(c,"def_|_30"),"_mayor30",sep="")
-  cat("Causa: ",c," File: ",file_path,"\n",sep="")
-  mod <- glm(reformulate(deparse(formula_base[[3]]), response = c), 
-             data = df,
-             na.action=na.omit,
-             family=poisson(link=log))
-  f_savePlot(last_plot(), sprintf(file_name,file_path),dpi=150)
-  saveRDS(mod, sprintf(file_mod,file_path))
-  rm(mod,file_path)
-}
-rm(c)
 
 
 ## Modelo Step sobre Y= Causas Cardiopulmonares ------------
