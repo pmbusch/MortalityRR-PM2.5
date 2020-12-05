@@ -207,24 +207,50 @@ gam::plot.Gam(mod_poisson_interaction,se=T,rug=T)
 # cplot(mod_poisson_interaction, "mp25_10um")
 
 
+## Population above 50K
+df %>% filter(!is.na(mp25)&population>50*1e3) %>% nrow()
+mod_poisson_pop <- glm(deathsAdj_CDP ~ mp25_10um +
+                     scale(urbanDensity) +
+                     scale(perc_female) +
+                     scale(perc_ethnicityOrig) +
+                     scale(perc_rural) +
+                     scale(rate_hospitalBeds) +
+                     scale(perc_woodHeating) +
+                     scale(log(income_median)) + scale(perc_less_highschool) +
+                     scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                     # scale(perc_isapre)+
+                     # scale(perc_health)+
+                     # scale(perc_occupancy)+
+                     scale(perc_overcrowding_medium)+
+                     scale(hr_anual) +
+                     scale(heating_degree_15_winter) +
+                     offset(log(population)), 
+                   data = df %>% filter(population>50*1e3),
+                   family = poisson(link=log),
+                   # weights = log(population),
+                   na.action=na.omit)
 
-## Modelo Step sobre Y= Causas Cardiopulmonares ------------
+summary(mod_poisson_pop)
+nobs(mod_poisson_pop)
+f_tableMRR(mod_poisson_pop, preview = "none", highlight = T)
+f_figMRR(mod_poisson_pop)
+
+
+
+
+##Step Model  Y = CDP ------------
 # https://stats.stackexchange.com/questions/20836/algorithms-for-automatic-model-selection/20856#20856
 library(caret)
 
-## Creo df solo con variables numericas de interes (y fuera las COVID)
-df_modelo %>% names() %>% sort()
-df <-  df_modelo %>% 
-  mutate(mp10_minus25=mp10-mp25) %>% 
+## DF with only numerical variables of interest
+data_model %>% names() %>% sort()
+df <-  data_model %>% 
   dplyr::select(
-    poblacion,
-    def_cardioPulmonar,
-    `15-44`,`45-64`,`65-74`,`65+`,`75+`,
-    cons_lena_kg,  
-    densidad_pob,densidad_pob_censal,
-    densidad_pob_manzana_media, densidad_pob_manzana_mediana,
-    densidad_pob_manzana_p90, 
-    hdd15_winter_lenaCalefaccion, heating_degree_15_anual,
+    population,
+    deathsAdj_CDP,
+    urbanDensity_mean,urbanDensity_median,urbanDensity_mean_p90,
+    urbanDensity,
+    heating_degree_15_anual,
     heating_degree_15_fall,   heating_degree_15_spring,
     heating_degree_15_summer, heating_degree_15_winter,
     heating_degree_18_anual,  heating_degree_18_fall,
@@ -232,47 +258,43 @@ df <-  df_modelo %>%
     heating_degree_18_winter, hr_anual,
     hr_fall, hr_spring, hr_summer, hr_winter,
     tmed_anual,  tmed_fall, tmed_spring, tmed_summer,tmed_winter,
-    ingresoAutonomo_media,ingresoAutonomo_mediana,
-    ingresoTotal_media,   ingresoTotal_mediana,
-    mp25, mp10_minus25,
+    income_mean,income_median,
+    mp25_10um, 
+    # mp10_minus25,
+    perc_woodCooking,perc_woodHeating,perc_woodWarmWater,
     perc_FFAA, perc_fonasa_A, perc_fonasa_B, perc_fonasa_C,
-    perc_fonasa_D, perc_isapre, perc_salud,
-    perc_lenaAgua, perc_lenaCalefaccion, perc_lenaCocina, 
-    perc_material_irrecuperable,perc_menor_media,
-    perc_mujer, perc_puebloOrig, perc_rural,
-    perc_ocupado, perc_vivAntes2002,perc_vivHacCritico,
-    perc_vivHacMedio, perc_vivSinHac
-  ) %>% 
-  rename(e15_44=`15-44`,e45_64=`45-64`,e65_74=`65-74`,
-         e65_plus=`65+`,e75_plus=`75+`) %>% 
+    perc_fonasa_D, perc_isapre, 
+    # perc_health,
+    perc_less_highschool,perc_occupancy,
+    perc_female,perc_ethnicityOrig,perc_rural,
+    perc_overcrowding_low,perc_overcrowding_medium,perc_overcrowding_high) %>% 
   na.omit()
-df %>% nrow() #Numero observaciones
+df %>% nrow() # Number of obs
 
+# cor(df$mp25_10um, df$perc_health) # Almost no correlation
 
-# Columnas a remover dado que serian redundantes por su correlacion con otras variables
+# We remove colums with redundant information, based on their correlation with other variables
 # identify and eliminate collinear variables
 cols <- df %>% 
   cor() %>% 
   findCorrelation()
 # Columnas fuera
 df[,cols] %>% names() %>% sort()
-## Keep def_cardiopulmonar and poblacion
+## Keep dependent and population
 cols <- cols[cols!=1 & cols!=2]
 # Columnas remanentes
 df[,-cols] %>% names() %>% sort()
-
 df <- df[,-cols]
-
 
 ## Prepare model with an offset
 ## Fuente: https://stackoverflow.com/questions/61104205/how-can-i-train-a-glmnet-model-poisson-family-with-an-offset-term-using-the-ca
 
 # AIC estimates the relative amount of information lost by a given model: 
 # the less information a model loses, the higher the quality of that model
-dat <- df %>% dplyr::select(-poblacion)
-X = model.matrix(def_cardioPulmonar ~ ., data=dat)
-Y = dat$def_cardioPulmonar
-OFF = log(df$poblacion)
+dat <- df %>% dplyr::select(-population)
+X = model.matrix(deathsAdj_CDP ~ ., data=dat)
+Y = dat$deathsAdj_CDP
+OFF = log(df$population)
 
 glm_fit <- caret::train(
   x = cbind(X,OFF),
@@ -288,17 +310,17 @@ glm_fit <- caret::train(
 glm_fit
 summary(glm_fit)
 varImp(glm_fit)
-f_tableMRR(glm_fit$finalModel, preview="none")
-rm(glm_fit)
+f_tableMRR(glm_fit$finalModel, preview="none", highlight = T)
+# rm(glm_fit)
 
 ## Adjust same model
 formula_step <- format(glm_fit$finalModel$formula) %>% 
   paste(collapse = "") %>% 
-  str_replace(".outcome", "def_cardioPulmonar") %>% 
+  str_replace(".outcome", "deathsAdj_CDP") %>% 
   str_replace_all("\\+",") + scale(") %>% 
   str_replace("~","~scale(") %>% 
   str_remove_all(" ") %>% 
-  str_replace("scale\\(OFF", "offset(log(poblacion))") %>% 
+  str_replace("scale\\(OFF", "offset(log(population))") %>% 
   formula()
 formula_step
 
@@ -308,8 +330,9 @@ mod <- glm(formula_step,
            na.action = na.omit)
 summary(mod)
 nobs(mod)
-f_tableMRR(mod, preview = "none")
+f_tableMRR(mod, preview = "none", highlight=T)
 f_figMRR(mod)
 
 rm(glm_fit, mod)
 
+## EoF
