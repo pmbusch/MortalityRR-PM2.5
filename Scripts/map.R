@@ -159,7 +159,7 @@ p_mp25 <- df %>%
   fig_map(mp25, limits = c(0,50), lwd=0.01,title=f_replaceVar("mp25"))+
   geom_sf(data=monitor, aes(geometry=geometry), shape=4)+
   labs(title="PM2.5", caption = "Monitor site marked with cross")+
-  
+  coord_sf(datum = NA,expand=F)
 
 p_mr <- df %>% 
   mutate(hasMonitor=if_else(is.na(mp25),"No","Yes")) %>% 
@@ -175,7 +175,7 @@ p_mr <- df %>%
   theme_minimal(base_size = 14)+
   guides(col=F)+
   labs(title="Adj. MR CDP", x="", y="", caption="Commune with monitor with black border")
-p_mr
+# p_mr
 
 
 p_mp25|p_mr
