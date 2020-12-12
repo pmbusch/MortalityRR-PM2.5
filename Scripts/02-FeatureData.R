@@ -72,6 +72,12 @@ data_model <- data_model %>% mutate(quartile_urbanDensity=qgroup(urbanDensity, 5
 data_model %>% group_by(quartile_urbanDensity) %>% 
   summarise(count=n()) %>% arrange(desc(count))
 
+# Combine Fonasa and Wood
+data_model <- data_model %>% 
+  mutate(perc_fonasa_AB=perc_fonasa_A+perc_fonasa_B,
+         perc_fonasa_CD=perc_fonasa_C+perc_fonasa_D,
+         perc_wood_avg=(perc_woodCooking+perc_woodHeating+perc_woodWarmWater)/3)
+
 data_model %>% skim()
 
 ## Save Data -------
