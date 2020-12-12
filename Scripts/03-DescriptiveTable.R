@@ -21,14 +21,13 @@ df <- data_model %>%
   mutate(perc_fonasa=perc_fonasa_A+perc_fonasa_B+perc_fonasa_C+perc_fonasa_D,
          population=population/1e3,
          income_median=income_median/1e3) %>% 
-  select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN, 
+  select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,mrAdj_LCA, mrAdj_ExtCauses, 
          mp25, mp10,
          population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
          perc_rural, perc_ethnicityOrig,perc_overcrowding_medium,
          rate_hospitalBeds,
          income_median,perc_less_highschool, perc_occupancy, perc_health,
-         perc_isapre, perc_fonasa_D,perc_fonasa_C,
-         perc_fonasa_B, perc_fonasa_A, 
+         perc_isapre, perc_fonasa_CD, perc_fonasa_AB, 
          perc_woodCooking,perc_woodHeating,perc_woodWarmWater,
          hr_summer, hr_winter, tmed_summer, tmed_winter,
          heating_degree_15_summer, heating_degree_15_winter)

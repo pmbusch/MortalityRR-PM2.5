@@ -27,7 +27,11 @@ data_model <- data_model %>%
          deathsAdj_RSP=mrAdj_RSP*population/1e5,
          deathsAdj_RSP=as.integer(deathsAdj_RSP),
          deathsAdj_CAN=mrAdj_CAN*population/1e5,
-         deathsAdj_CAN=as.integer(deathsAdj_CAN))
+         deathsAdj_CAN=as.integer(deathsAdj_CAN),
+         deathsAdj_LCA=mrAdj_LCA*population/1e5,
+         deathsAdj_LCA=as.integer(deathsAdj_LCA),
+         deathsAdj_ExtCauses=mrAdj_ExtCauses*population/1e5,
+         deathsAdj_ExtCauses=as.integer(deathsAdj_ExtCauses))
 
 # Male and Female
 data_model <- data_model %>% 
@@ -40,7 +44,11 @@ data_model <- data_model %>%
          deathsAdj_RSP_male=mrAdj_RSP_male*population/1e5,
          deathsAdj_RSP_male=as.integer(deathsAdj_RSP_male),
          deathsAdj_CAN_male=mrAdj_CAN_male*population/1e5,
-         deathsAdj_CAN_male=as.integer(deathsAdj_CAN_male))
+         deathsAdj_CAN_male=as.integer(deathsAdj_CAN_male),
+         deathsAdj_LCA_male=mrAdj_LCA_male*population/1e5,
+         deathsAdj_LCA_male=as.integer(deathsAdj_LCA_male),
+         deathsAdj_ExtCauses_male=mrAdj_ExtCauses_male*population/1e5,
+         deathsAdj_ExtCauses_male=as.integer(deathsAdj_ExtCauses_male))
 data_model <- data_model %>% 
   mutate(deathsAdj_CDP_female=mrAdj_CDP_female*population/1e5,
          deathsAdj_CDP_female=as.integer(deathsAdj_CDP_female),
@@ -51,7 +59,11 @@ data_model <- data_model %>%
          deathsAdj_RSP_female=mrAdj_RSP_female*population/1e5,
          deathsAdj_RSP_female=as.integer(deathsAdj_RSP_female),
          deathsAdj_CAN_female=mrAdj_CAN_female*population/1e5,
-         deathsAdj_CAN_female=as.integer(deathsAdj_CAN_female))
+         deathsAdj_CAN_female=as.integer(deathsAdj_CAN_female),
+         deathsAdj_LCA_female=mrAdj_LCA_female*population/1e5,
+         deathsAdj_LCA_female=as.integer(deathsAdj_LCA_female),
+         deathsAdj_ExtCauses_female=mrAdj_ExtCauses_female*population/1e5,
+         deathsAdj_ExtCauses_female=as.integer(deathsAdj_ExtCauses_female))
 
 
 ## Fill NA ----------
