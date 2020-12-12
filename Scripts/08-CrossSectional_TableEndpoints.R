@@ -23,10 +23,9 @@ formula_initial <- formula(deathsAdj_CDP ~
                              scale(perc_female) +
                              scale(perc_ethnicityOrig) +
                              scale(perc_rural) +
-                             scale(rate_hospitalBeds) +
                              scale(perc_woodHeating) +
                              scale(log(income_median)) + scale(perc_less_highschool) +
-                             scale(perc_fonasa_A) + scale(perc_fonasa_D) +
+                             scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
                              scale(perc_overcrowding_medium)+
                              scale(hr_anual) +
                              scale(heating_degree_15_winter) +
@@ -35,20 +34,23 @@ formula_initial <- formula(deathsAdj_CDP ~
 
 ## Run models with different endpoint ------------
 endpoints <- c("deathsAdj_CDP", "deathsAdj_AllCauses","deathsAdj_CVD",
-               "deathsAdj_RSP", "deathsAdj_CAN")
+               "deathsAdj_RSP", "deathsAdj_CAN","deathsAdj_LCA","deathsAdj_ExtCauses")
 
 # mod_CDP <- glm(reformulate(deparse(formula_initial[[3]]), response = "deaths_CDP"), 
 #                data = df, na.action=na.omit, family=poisson(link=log))
 
-
+df <- data_model
 ## Loop to extract info from all models
 i <- 0
 for (e in endpoints){
-  # Run Model
-  mod <- glm(reformulate(deparse(formula_initial[[3]]), response = e), 
+  # cat(e," \n",sep="")
+  # Run Model: Poisson
+  mod <- glm(reformulate(deparse(formula_initial[[3]]), response = e),
                  data = df, na.action=na.omit, family=poisson(link=log))
   
-  
+  # Binomial
+  # mod <- glm.nb(reformulate(deparse(formula_initial[[3]]), response = e), 
+  #            data = df, na.action=na.omit)
   
   # Get Coefficients
   est <- summary(mod)$coefficients[,1:4] %>% as.data.frame() %>% 
@@ -74,7 +76,7 @@ for (e in endpoints){
   est <- est %>% dplyr::select(parametro, table_display)
   
   # Names
-  names(est) <- c("parametro", all.vars(mod$formula)[1])
+  names(est) <- c("parametro", e)
   
   ## Add additional parameters
   dev <- summary(mod)$deviance %>% round(2) %>% format(digits=2)
@@ -99,12 +101,11 @@ est_all <- est_all[-1,]
 
 
 ## Summary Table --------------
-
 foot_note <- c("MRR (p-value)",
                "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
 
 names(est_all) <- c("Variable","Adj. MR CDP","Adj. MR All Causes","Adj. MR CVD",
-                    "Adj. MR RSP","Adj. MR CAN")
+                    "Adj. MR RSP","Adj. MR CAN","Adj. MR LCA","Adj. MR Ext. Causes")
 
 est_all %>% 
   mutate(Variable=Variable %>% 
@@ -115,10 +116,15 @@ est_all %>%
   autofit(add_w = 0.1, add_h = 0.3) %>%
   align(j=1, align = "left", part="all") %>% 
   bold(j=1, bold=T) %>% 
-  flextable::border(part="body",i=14,
+  flextable::border(part="body",i=13,
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  footnote(j=1:2, value=as_paragraph(foot_note), part="header", inline=T) %>% 
-  print(preview="docx")
-
+  footnote(j=1:2, value=as_paragraph(foot_note), part="header", inline=F,
+           ref_symbols = c("a","b")) %>% 
+  footnote(j=1,i=1, ref_symbols = c("c"),part="body", inline=F,
+           value=as_paragraph("For PM2.5 MR represent an increase in RR per 10 ug/m3")) %>% 
+  footnote(j=1,i=2, ref_symbols = c("d"),part="body", inline=F,
+           value=as_paragraph("For every other variable MR is presented per an increase in one standard deviation from the mean (scale)")
+           ) 
+  # print(preview="docx")
 
 # EoF
