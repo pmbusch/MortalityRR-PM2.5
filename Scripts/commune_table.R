@@ -13,7 +13,7 @@ df <- data_model %>%
 
 # Select variables to shown
 df <- df %>% 
-  select(nombre_comuna, region,Latitude, mp25, population, mrAdj_CDP, mrAdj_CAN, 
+  select(nombre_comuna, region,Latitude, mp25, population,mrAdj_AllCauses, mrAdj_CDP,
          income_median, perc_woodHeating) %>% 
   mutate(population=population/1e3,
          income_median=income_median/1e3)
@@ -27,7 +27,7 @@ df <- df[c(1:n,(nrow(df)-n+1):(nrow(df))),]
 # Difference between tops (weighted mean)
 df %>% mutate(top10=mp25>20) %>% group_by(top10) %>% 
   summarise(mrAdj_CDP=weighted.mean(mrAdj_CDP, population, na.rm=T),
-            mrAdj_CAN=weighted.mean(mrAdj_CAN, population, na.rm=T)) %>% ungroup()
+            mrAdj_AllCauses=weighted.mean(mrAdj_AllCauses, population, na.rm=T)) %>% ungroup()
 
 
 # Change names

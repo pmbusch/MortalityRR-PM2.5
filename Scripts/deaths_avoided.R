@@ -3,11 +3,15 @@
 ## PBH Dec 2020
 
 # PM2.5 standard
-standard <- 12
+standard <- 20
 
 # beta used for CDP, per 10 ug/m3
-beta <- 0.057025
+beta <- 0.065222
 exp(beta)
+
+# 95% C.I
+# beta <- 0.024268681 # low
+# beta <- 0.106199229 #high
 
 # Calculate delta C
 df <- data_model %>% 

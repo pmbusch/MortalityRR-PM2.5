@@ -24,8 +24,8 @@ df <- data_model %>%
   select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,mrAdj_LCA, mrAdj_ExtCauses, 
          mp25, mp10,
          population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
-         perc_rural, perc_ethnicityOrig,perc_overcrowding_medium,
-         rate_hospitalBeds,
+         perc_rural, perc_ethnicityOrig,
+         perc_overcrowding_medium,perc_overcrowding_high,
          income_median,perc_less_highschool, perc_occupancy, perc_health,
          perc_isapre, perc_fonasa_CD, perc_fonasa_AB, 
          perc_woodCooking,perc_woodHeating,perc_woodWarmWater,
@@ -77,7 +77,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:6, part="body",i=c(5,7,10,19,29),
+  flextable::border(j=2:6, part="body",i=c(7,9,12,22,29),
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   footnote(j=4:6, value=as_paragraph(foot_note), part="header", inline=T) 
 # print(preview="pptx")
@@ -95,11 +95,11 @@ df_skim <- df %>%
   mutate(
     # n=complete_rate*nrow(filter(df,!is.na(mp25))) %>% round(0),
          cv=numeric.sd/numeric.mean) %>% 
-  select(skim_variable, numeric.mean, cv,
+  select(skim_variable, numeric.mean, numeric.sd,
          numeric.p0, numeric.p50, numeric.p100) %>% 
   rename(Variable=skim_variable,
          Mean=numeric.mean,
-         `C.V.`=cv,
+         `Std. Error`=numeric.sd,
          Min=numeric.p0, Median=numeric.p50, Max=numeric.p100)
 
 # Cambio nombre variables
@@ -110,6 +110,7 @@ df_skim <- df_skim %>%
            str_replace("Median monthly income per capita",
                        "Median monthly income per capita [thousands $CLP]") %>% 
          str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
+           str_remove("\\[per 100,000\\]") %>% 
            str_remove_all("Adjusted mortality rate")) %>% 
   arrange(Type)
 df_skim <- df_skim[,c(7,1,2,3,4,5,6)] # Reorder columns
@@ -128,10 +129,8 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:7, part="body",i=c(5,7,10,19,29),
-         border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  footnote(j=4, value=as_paragraph("Coefficient of Variation"), 
-           part="header", inline=T)
+  flextable::border(j=2:7, part="body",i=c(7,9,12,22,29),
+         border.bottom = officer::fp_border(style = "solid", width=2))
   # print(preview="docx")
   # print(preview="pptx")
 
@@ -185,7 +184,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:5, part="body",i=c(5,7,10,19,29),
+  flextable::border(j=2:5, part="body",i=c(7,9,12,22,29),
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   footnote(j=3:5, value=as_paragraph(foot_note), part="header", inline=T,
            ref_symbols = c("a", "b", "c")) 

@@ -39,6 +39,7 @@ mod_poisson <- glm(deathsAdj_CDP ~ mp25_10um +
                    na.action=na.omit)
 
 summary(mod_poisson)
+confint(mod_poisson, method="Wald")
 nobs(mod_poisson)
 f_tableMRR(mod_poisson, preview = "none", highlight = T)
 f_figMRR(mod_poisson)
