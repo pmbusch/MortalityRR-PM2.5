@@ -49,6 +49,10 @@ df_deis %>% filter(categ_diag1 %in% c("C34","C33")) %>% nrow()/3
 ## External causes: Suplement of all causes
 df_deis %>% filter(!is.na(cap_diag2)) %>% nrow()/3
 
+# Explore external causes
+df_deis %>% names()
+df_deis %>% filter(!is.na(cap_diag2)) %>% group_by(glosa_categ_diag2) %>% 
+  summarise(count=n()) %>% arrange(desc(count))
 
 # Age
 df_deis$edad_tipo %>% unique()

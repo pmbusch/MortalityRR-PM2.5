@@ -14,6 +14,8 @@ source("Scripts/Aggregate_Data/population_agg.R", encoding = "UTF-8")
 source("Scripts/Aggregate_Data/deis_agg.R", encoding = "UTF-8")
 ## Air pollution Data
 df_conc <- read_rds("Data/Data_Model/AirPollution_Data.rsd")
+df_conc_50km <- read_rds("Data/Data_Model/AirPollution_Data_50km.rsd")
+df_conc_100km <- read_rds("Data/Data_Model/AirPollution_Data_100km.rsd")
 # Meteorological Data
 df_meteo <- read_rds("Data/Data_Model/Meteorology_Data.rsd")
 # Census data
@@ -49,7 +51,6 @@ saveRDS(df_census,"Data/Data_Model/RDS_DataSets/df_census.rds")
 saveRDS(df_minvu,"Data/Data_Model/RDS_DataSets/df_minvu.rds")
 saveRDS(mrAdj,"Data/Data_Model/RDS_DataSets/mrAdj.rds")
 saveRDS(mr,"Data/Data_Model/RDS_DataSets/mr.rds")
-
 
 
 ## EoF

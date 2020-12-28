@@ -7,10 +7,10 @@ source("Scripts/00-Functions.R", encoding = "UTF-8")
 
 
 ## Relevant indicators ------------
-# Total population in commune with PM2.5 data
-data_model %>% filter(!is.na(mp25)) %>% nrow()
+# Total population in commune with PM2.5 data (use data valid for the model)
+data_model %>% filter(commune_valid) %>% nrow()
 total_pob <- data_model$population %>% sum()
-pob_mp25 <- data_model %>% filter(!is.na(mp25)) %>% pull(population) %>% sum()
+pob_mp25 <- data_model %>% filter(commune_valid) %>% pull(population) %>% sum()
 cat(round(pob_mp25/total_pob*100,1),
     "% population in communes with PM2.5 exposure estimated")
 
@@ -22,7 +22,7 @@ df <- data_model %>%
          population=population/1e3,
          income_median=income_median/1e3) %>% 
   select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,mrAdj_LCA, mrAdj_ExtCauses, 
-         mp25,
+         mp25,commune_valid,
          population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
          perc_rural, perc_ethnicityOrig,
          perc_overcrowding_medium,perc_overcrowding_high,
@@ -34,21 +34,24 @@ df <- data_model %>%
 
 # separo por la condicion de si tiene o no estacion
 df_sep <- df %>% 
-  mutate(has_monitor=if_else(!is.na(mp25),"si","no")) %>% 
+  mutate(has_monitor=if_else(commune_valid,"si","no")) %>% 
   group_by(has_monitor) %>% skim() %>% 
   mutate(indicator=paste(round(numeric.mean,1)," (",
-                         round(numeric.sd,1),")", sep="")) %>% 
+                         round(numeric.sd,1),")", sep=""),
+         commune_valid=NULL) %>% 
   select(skim_variable, has_monitor, indicator) %>% 
   spread(has_monitor, indicator)
   
-df_skim <- df %>% skim() %>% 
+df_skim <- df %>% 
+  select(-commune_valid) %>% 
+  skim() %>% 
   mutate(n=complete_rate*nrow(df),
          indicator=paste(round(numeric.mean,1)," (",
                          round(numeric.sd,1),")", sep="")) %>% 
   select(skim_variable,n, indicator) %>% 
   left_join(df_sep)
 
-n_mp25 <- data_model %>% filter(!is.na(mp25)) %>% nrow()
+n_mp25 <- data_model %>% filter(commune_valid) %>% nrow()
 foot_note <- paste("n:",c(nrow(data_model),nrow(data_model)-n_mp25,
                           n_mp25),"communes",sep=" ")
 
@@ -90,7 +93,7 @@ rm(foot_note,df_skim, df_sep, n_mp25)
 # Note: Only valid for variables with a meaningful zero (as ratios). Not valid for T°
 # https://en.wikipedia.org/wiki/Coefficient_of_variation
 df_skim <- df %>% 
-  filter(!is.na(mp25)) %>% 
+  filter(commune_valid) %>% select(-commune_valid) %>% 
   skim() %>% 
   mutate(
     # n=complete_rate*nrow(filter(df,!is.na(mp25))) %>% round(0),
@@ -137,10 +140,11 @@ df_skim %>%
 
 # TABLE MEAN (SD) FOR PM2.5 LEVELS ---------------
 ## Level set at 20 (Chilean Standard)
-df <- df %>% filter(!is.na(mp25))
+df <- df %>% filter(commune_valid)
 
 # Split for 20 ug condition
 df_sep <- df %>% 
+  select(-commune_valid) %>% 
   mutate(above_standard=if_else(mp25>20,"si","no")) %>% 
   group_by(above_standard) %>% skim() %>% 
   mutate(indicator=paste(round(numeric.mean,1)," (",
@@ -148,7 +152,9 @@ df_sep <- df %>%
   select(skim_variable, above_standard, indicator) %>% 
   spread(above_standard, indicator)
 
-df_skim <- df %>% skim() %>% 
+df_skim <- df %>% 
+  select(-commune_valid) %>% 
+  skim() %>% 
   mutate(n=complete_rate*nrow(df),
          indicator=paste(round(numeric.mean,1)," (",
                          round(numeric.sd,1),")", sep="")) %>% 
@@ -184,7 +190,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:5, part="body",i=c(7,9,12,22,29),
+  flextable::border(j=2:5, part="body",i=c(7,8,11,21,27),
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   footnote(j=3:5, value=as_paragraph(foot_note), part="header", inline=T,
            ref_symbols = c("a", "b", "c")) 

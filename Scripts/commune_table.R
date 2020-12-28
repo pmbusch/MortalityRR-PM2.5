@@ -6,14 +6,14 @@
 
 # Filter data and sort
 df <- data_model %>% 
-  filter(!is.na(mp25)) %>% 
+  filter(commune_valid) %>% 
   arrange(desc(mp25)) %>% 
   mutate(Latitude=map_dbl(geometry, ~st_centroid(.x)[[2]]))
 
 
 # Select variables to shown
 df <- df %>% 
-  select(nombre_comuna, region,Latitude, mp25, population,mrAdj_AllCauses, mrAdj_CDP,
+  dplyr::select(nombre_comuna, region,Latitude, mp25, population,mrAdj_AllCauses, mrAdj_CDP,
          income_median, perc_woodHeating) %>% 
   mutate(population=population/1e3,
          income_median=income_median/1e3)
@@ -22,9 +22,9 @@ df <- df %>%
 # Top and bottom
 n <- 10
 df <- df[c(1:n,(nrow(df)-n+1):(nrow(df))),]
+# df <- df %>% filter(nombre_comuna %in% c("Santiago","Calama"))
 
-
-# Difference between tops (weighted mean)
+  # Difference between tops (weighted mean)
 df %>% mutate(top10=mp25>20) %>% group_by(top10) %>% 
   summarise(mrAdj_CDP=weighted.mean(mrAdj_CDP, population, na.rm=T),
             mrAdj_AllCauses=weighted.mean(mrAdj_AllCauses, population, na.rm=T)) %>% ungroup()
@@ -46,7 +46,7 @@ df %>%
   autofit(add_w = 0.1, add_h = 0.3) %>%
   align(j=1:2, align = "left", part="all") %>% 
   align(j=3:9, align = "right", part="all") %>% 
-  colformat_num(j=c(3,4,5,9), digits=2) %>% 
+  colformat_num(j=c(3,4,5,9), digits=2) %>%
   colformat_num(j=c(6,7,8), digits=0) %>%
   flextable::border(i=10, part="body",
                     border.bottom = officer::fp_border(style = "solid", width=2))
@@ -55,5 +55,6 @@ df %>%
 
 # Number of PM2.5 repeated
 data_model$mp25 %>% unique() %>% length()
+data_model %>% group_by(mp25) %>% summarise(count=n()) %>% arrange(desc(count))
 
 ## EoF

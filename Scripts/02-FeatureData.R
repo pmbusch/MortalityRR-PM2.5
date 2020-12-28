@@ -105,6 +105,28 @@ data_model <- data_model %>%
 
 data_model %>% skim()
 
+
+## Total data used in the models
+communes_valid <- data_model %>% 
+  dplyr::select(codigo_comuna, nombre_comuna,
+                deathsAdj_AllCauses, deathsAdj_CDP,deathsAdj_CVD,
+                deathsAdj_RSP, deathsAdj_CAN,deathsAdj_LCA,deathsAdj_ExtCauses,
+                urbanDensity, perc_female,perc_ethnicityOrig,perc_rural,
+                perc_woodHeating,income_median, perc_less_highschool,
+                perc_fonasa_AB,perc_fonasa_CD,perc_overcrowding_medium,
+                hr_anual, heating_degree_15_winter, population, mp25) %>% 
+  na.omit() %>% pull(nombre_comuna)
+
+commune_mp25 <- data_model %>% filter(!is.na(mp25)) %>% pull(nombre_comuna)
+
+data_model <- data_model %>% 
+  mutate(commune_valid=nombre_comuna %in% communes_valid)
+
+# Communes excluded without meteorological data
+commune_mp25[!(commune_mp25 %in% communes_valid)]
+rm(commune_mp25)
+
+
 ## Save Data -------
 cat('sep=; \n',file = "Data/Data_Model/Data_Model.csv")
 write.table(data_model %>% dplyr::select(-geometry),"Data/Data_Model/Data_Model.csv",
