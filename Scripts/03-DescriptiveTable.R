@@ -79,7 +79,7 @@ df_skim %>%
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   flextable::border(j=2:6, part="body",i=c(7,8,11,21,27),
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  footnote(j=4:6, value=as_paragraph(foot_note), part="header", inline=T) 
+  footnote(j=4:6, value=as_paragraph(foot_note), part="header", inline=T)
 # print(preview="pptx")
 # print(preview="docx")
 

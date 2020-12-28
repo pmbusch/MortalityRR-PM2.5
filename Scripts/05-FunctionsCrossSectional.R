@@ -3,7 +3,7 @@
 ## PBH Julio 2020
 
 
-foot_note <- "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1"
+foot_note <- "Signif. codes: 0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1"
 
 f_tableCoef <- function(model, preview="none", highlight=F){
   # est <- cbind(est=coef(mod), confint(mod))

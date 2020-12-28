@@ -33,7 +33,7 @@ formula_initial <- formula(deathsAdj_CDP ~
 
 
 ## Run models with different endpoint ------------
-endpoints <- c("deathsAdj_CDP", "deathsAdj_AllCauses","deathsAdj_CVD",
+endpoints <- c("deathsAdj_AllCauses", "deathsAdj_CDP","deathsAdj_CVD",
                "deathsAdj_RSP", "deathsAdj_CAN","deathsAdj_LCA","deathsAdj_ExtCauses")
 
 # mod_CDP <- glm(reformulate(deparse(formula_initial[[3]]), response = "deaths_CDP"), 
@@ -104,7 +104,7 @@ est_all <- est_all[-1,]
 foot_note <- c("MRR (p-value)",
                "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
 
-names(est_all) <- c("Variable","Adj. MR CDP","Adj. MR All Causes","Adj. MR CVD",
+names(est_all) <- c("Variable","Adj. MR All Causes", "Adj. MR CDP","Adj. MR CVD",
                     "Adj. MR RSP","Adj. MR CAN","Adj. MR LCA","Adj. MR Ext. Causes")
 
 est_all %>% 
@@ -121,9 +121,9 @@ est_all %>%
   footnote(j=1:2, value=as_paragraph(foot_note), part="header", inline=F,
            ref_symbols = c("a","b")) %>% 
   footnote(j=1,i=1, ref_symbols = c("c"),part="body", inline=F,
-           value=as_paragraph("For PM2.5 MR represent an increase in RR per 10 ug/m3")) %>% 
+           value=as_paragraph("For PM2.5 MRR represent an increase in RR per 10 ug/m3")) %>% 
   footnote(j=1,i=2, ref_symbols = c("d"),part="body", inline=F,
-           value=as_paragraph("For every other variable MR is presented per an increase in one standard deviation from the mean (scale)")
+           value=as_paragraph("For every other variable MRR is presented per an increase in one standard deviation from the mean")
            ) 
   # print(preview="docx")
 
