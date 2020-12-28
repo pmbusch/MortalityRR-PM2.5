@@ -46,11 +46,14 @@ df %>%
   autofit(add_w = 0.1, add_h = 0.3) %>%
   align(j=1:2, align = "left", part="all") %>% 
   align(j=3:9, align = "right", part="all") %>% 
-  colformat_num(j=3:9, digits=2) %>% 
+  colformat_num(j=c(3,4,5,9), digits=2) %>% 
+  colformat_num(j=c(6,7,8), digits=0) %>%
   flextable::border(i=10, part="body",
                     border.bottom = officer::fp_border(style = "solid", width=2))
 # print(preview="pptx")
 # print(preview="docx")
 
+# Number of PM2.5 repeated
+data_model$mp25 %>% unique() %>% length()
 
 ## EoF
