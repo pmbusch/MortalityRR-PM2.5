@@ -4,7 +4,6 @@ Chronic Exposure to Fine Particles (PM2.5) and Mortality: A case study from Chil
 An ecological cross-sectional study with national data at commune level from Chile to address the impact of long term PM2.5 concentrations on age-adjusted mortality rates, controlling by multiple explanatory variables
 
 Project has the following sections:
-* Data used in the models [`Data`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Data)
 * Code for analysis [`Scripts`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Scripts)
 
 # Data Sources
