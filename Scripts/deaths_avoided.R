@@ -1,5 +1,5 @@
 ### MortalityRR-PM2.5
-## Calculate deaths avoided by reducing air quality
+## Calculate deaths avoided by improving air quality to different standards.
 ## PBH Dec 2020
 
 # PM2.5 standard
