@@ -78,14 +78,15 @@ for (e in endpoints){
   # Names
   names(est) <- c("parametro", e)
   
-  ## Add additional parameters
-  dev <- summary(mod)$deviance %>% round(2) %>% format(digits=2)
-  aic <- summary(mod)$aic %>% round(2) %>% format(digits=2)
   
-  est <- rbind(est,
-               c("n",nobs(mod)),
-               c("Residual Deviance",dev),
-               c("AIC", aic))
+  ## Add additional parameters
+  # dev <- summary(mod)$deviance %>% round(2) %>% format(digits=2)
+  # aic <- summary(mod)$aic %>% round(2) %>% format(digits=2)
+  # 
+  # est <- rbind(est,
+  #              c("n",nobs(mod)),
+  #              c("Residual Deviance",dev),
+  #              c("AIC", aic))
   
   # Join
   if (i!=0){
@@ -102,10 +103,26 @@ est_all <- est_all[-1,]
 
 ## Summary Table --------------
 foot_note <- c("MRR (p-value)",
-               "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
+               "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1. Estimated MRR with a p-value below 0.05 are in bold.")
 
 names(est_all) <- c("Variable","Adj. MR All Causes", "Adj. MR CDP","Adj. MR CVD",
                     "Adj. MR RSP","Adj. MR CAN","Adj. MR LCA","Adj. MR Ext. Causes")
+
+
+# Function to extract p-value from text, return boolean if it is below 0.05
+f_extractPvalue <- function(text){
+  text_return <- text %>% str_extract("\\(\\d\\.\\d\\d\\)") %>% 
+    str_remove_all("\\(|\\)") %>% as.numeric()
+  
+  return(
+    if_else(is.na(text_return)|text_return>0.05,F,T)
+  )
+}
+
+est_all$`Adj. MR All Causes` %>% f_extractPvalue()
+
+slice
+
 
 est_all %>% 
   mutate(Variable=Variable %>% 
@@ -124,7 +141,14 @@ est_all %>%
            value=as_paragraph("For PM2.5 MRR represent an increase in RR per 10 ug/m3")) %>% 
   footnote(j=1,i=2, ref_symbols = c("d"),part="body", inline=F,
            value=as_paragraph("For every other variable MRR is presented per an increase in one standard deviation from the mean")
-           ) 
+           ) %>% 
+  bold(j=2, i=f_extractPvalue(est_all$`Adj. MR All Causes`)) %>% 
+  bold(j=3, i=f_extractPvalue(est_all$`Adj. MR CDP`)) %>% 
+  bold(j=4, i=f_extractPvalue(est_all$`Adj. MR CVD`)) %>% 
+  bold(j=5, i=f_extractPvalue(est_all$`Adj. MR RSP`)) %>% 
+  bold(j=6, i=f_extractPvalue(est_all$`Adj. MR CAN`)) %>% 
+  bold(j=7, i=f_extractPvalue(est_all$`Adj. MR LCA`)) %>% 
+  bold(j=8, i=f_extractPvalue(est_all$`Adj. MR Ext. Causes`))
   # print(preview="docx")
 
 # EoF
