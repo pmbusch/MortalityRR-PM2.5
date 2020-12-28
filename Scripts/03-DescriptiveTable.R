@@ -22,11 +22,11 @@ df <- data_model %>%
          population=population/1e3,
          income_median=income_median/1e3) %>% 
   select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,mrAdj_LCA, mrAdj_ExtCauses, 
-         mp25, mp10,
+         mp25,
          population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
          perc_rural, perc_ethnicityOrig,
          perc_overcrowding_medium,perc_overcrowding_high,
-         income_median,perc_less_highschool, perc_occupancy, perc_health,
+         income_median,perc_less_highschool, perc_occupancy,
          perc_isapre, perc_fonasa_CD, perc_fonasa_AB, 
          perc_woodCooking,perc_woodHeating,perc_woodWarmWater,
          hr_summer, hr_winter, tmed_summer, tmed_winter,
@@ -77,7 +77,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:6, part="body",i=c(7,9,12,22,29),
+  flextable::border(j=2:6, part="body",i=c(7,8,11,21,27),
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   footnote(j=4:6, value=as_paragraph(foot_note), part="header", inline=T) 
 # print(preview="pptx")
@@ -99,7 +99,7 @@ df_skim <- df %>%
          numeric.p0, numeric.p50, numeric.p100) %>% 
   rename(Variable=skim_variable,
          Mean=numeric.mean,
-         `Std. Error`=numeric.sd,
+         `Std. Dev.`=numeric.sd,
          Min=numeric.p0, Median=numeric.p50, Max=numeric.p100)
 
 # Cambio nombre variables
@@ -129,7 +129,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:7, part="body",i=c(7,9,12,22,29),
+  flextable::border(j=2:7, part="body",i=c(7,8,11,21,27),
          border.bottom = officer::fp_border(style = "solid", width=2))
   # print(preview="docx")
   # print(preview="pptx")

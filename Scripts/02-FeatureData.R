@@ -90,6 +90,19 @@ data_model <- data_model %>%
          perc_fonasa_CD=perc_fonasa_C+perc_fonasa_D,
          perc_wood_avg=(perc_woodCooking+perc_woodHeating+perc_woodWarmWater)/3)
 
+## HDD to average, not sum
+data_model <- data_model %>% 
+  mutate(heating_degree_15_anual=heating_degree_15_anual/24,
+         heating_degree_15_winter=heating_degree_15_winter/24,
+         heating_degree_15_summer=heating_degree_15_summer/24,
+         heating_degree_15_spring=heating_degree_15_spring/24,
+         heating_degree_15_fall=heating_degree_15_fall/24,
+         heating_degree_18_anual=heating_degree_18_anual/24,
+         heating_degree_18_winter=heating_degree_18_winter/24,
+         heating_degree_18_summer=heating_degree_18_summer/24,
+         heating_degree_18_spring=heating_degree_18_spring/24,
+         heating_degree_18_fall=heating_degree_18_fall/24)
+
 data_model %>% skim()
 
 ## Save Data -------
