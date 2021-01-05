@@ -48,11 +48,17 @@ df_deis %>% filter(str_detect(subcateg_diag1,"C")) %>% pull(grupo_diag1) %>% uni
 df_deis %>% filter(categ_diag1 %in% c("C34","C33")) %>% nrow()/3
 ## External causes: Suplement of all causes
 df_deis %>% filter(!is.na(cap_diag2)) %>% nrow()/3
+## Suicides
+df_deis %>% filter(grupo_diag2=="X60-X84") %>% nrow()/3
 
 # Explore external causes
 df_deis %>% names()
 df_deis %>% filter(!is.na(cap_diag2)) %>% group_by(glosa_categ_diag2) %>% 
   summarise(count=n()) %>% arrange(desc(count))
+
+# df_deis %>% filter(!is.na(cap_diag2)) %>% 
+#   write.table("externalDeaths.csv", sep=";",row.names = F)
+
 
 # Age
 df_deis$edad_tipo %>% unique()
@@ -113,6 +119,13 @@ f_adjMR_causes <- function(common_df,
   mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
                        cause_filter = !is.na(cap_diag2),
                        name_var = paste("mrAdj_ExtCauses",name_end,sep=""),
+                       sex_filter = {{sex_filter2}})
+  common_df <- left_join(common_df, mrAdj_aux, by=c("codigo_comuna")); rm(mrAdj_aux)
+  
+  # Suicidal: Lesiones autoinfligidas intencionalmente 
+  mrAdj_aux <- f_adjMR(df_deis,df_population_deis,
+                       cause_filter = grupo_diag2=="X60-X84",
+                       name_var = paste("mrAdj_SUI",name_end,sep=""),
                        sex_filter = {{sex_filter2}})
   common_df <- left_join(common_df, mrAdj_aux, by=c("codigo_comuna")); rm(mrAdj_aux)
   
@@ -199,6 +212,13 @@ f_MR_causes <- function(common_df,
                  age_filter={{age_filter2}})
   common_df <- left_join(common_df, mr_aux, by=c("codigo_comuna")); rm(mr_aux)
   
+  # Suicide: Lesiones autoinfligidas intencionalmente 
+  mr_aux <- f_MR(df_deis,df_population_deis,
+                 cause_filter = grupo_diag2=="X60-X84",
+                 name_var = paste("mr_SUI",name_end,sep=""),
+                 sex_filter = {{sex_filter2}},
+                 age_filter={{age_filter2}})
+  common_df <- left_join(common_df, mr_aux, by=c("codigo_comuna")); rm(mr_aux)
   
   return(common_df)
 }

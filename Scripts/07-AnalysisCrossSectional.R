@@ -16,7 +16,8 @@ library(glmmTMB)
 library(gamm4)
 library(ggfortify)
 
-df <- data_model %>% arrange(population)
+df <- data_model %>% arrange(population) %>% 
+  mutate(deathsAdj=deathsAdj_ExtCauses-deathsAdj_SUI)
 
 # Base Model. Y= CDP -------------
 # Poisson distribution
