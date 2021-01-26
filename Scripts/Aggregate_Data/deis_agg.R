@@ -224,7 +224,8 @@ f_MR_causes <- function(common_df,
 }
 
 
-# Function to get Causes and age gruoups: All, 30+, 65+, 75+
+# Function to get Causes and age gruoups: 
+# All, 30+, 65+, 75+, 0-30, 30-64, 65-74
 f_MR_causes_Age <- function(common_df,
                             df_death,df_pop,
                             sex_filter3=T,
@@ -249,6 +250,27 @@ f_MR_causes_Age <- function(common_df,
                            sex_filter2 = {{sex_filter3}},
                            name_end = paste(name_end2,"_75plus",sep = ""),
                            age_filter2 = age_group %in% c("75-79","80+"))
+  
+  # 0-30
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
+                           sex_filter2 = {{sex_filter3}},
+                           name_end = paste(name_end2,"_0_30",sep = ""),
+                           age_filter2 = age_group %in% c("0-4","5-9","10-14",
+                                                            "15-19","20-24","25-29"))
+  
+  # 30-64
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
+                           sex_filter2 = {{sex_filter3}},
+                           name_end = paste(name_end2,"_30_64",sep = ""),
+                           age_filter2 = age_group %in% c("30-34","35-39","40-44",
+                                                          "45-49","50-54","55-59",
+                                                          "60-64"))
+  
+  # 65-74
+  common_df <- f_MR_causes(common_df, df_deis, df_population_deis,
+                           sex_filter2 = {{sex_filter3}},
+                           name_end = paste(name_end2,"_65_74",sep = ""),
+                           age_filter2 = age_group %in% c("65-69","70-74"))
   
 }
   
