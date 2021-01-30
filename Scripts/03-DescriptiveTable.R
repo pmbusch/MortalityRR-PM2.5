@@ -59,7 +59,7 @@ foot_note <- paste("n:",c(nrow(data_model),nrow(data_model)-n_mp25,
 df_skim <- df_skim %>% 
   mutate(Type=f_addTypeVar(skim_variable),
          skim_variable=f_replaceVar(skim_variable) %>% 
-           str_replace("Population","Population [thousands]") %>% 
+           str_replace("Population 2017","Population 2017 [thousands]") %>% 
            str_replace("Median monthly income per capita",
                        "Median monthly income per capita [thousands $CLP]") %>% 
            str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
@@ -71,7 +71,7 @@ df_skim <- df_skim[,c(6,1,2,3,4,5)] # Reorder columns
 df_skim %>% 
   rename(Variable=skim_variable, Total=indicator, 
          `Without PM2.5`=no, `With PM2.5`=si) %>% 
-  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000]")) %>% 
+  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000] \n 2017-2019")) %>% 
   flextable() %>% 
   bold(bold=T, part="header") %>% bold(j=1:2, bold=T) %>% 
   autofit(add_w = 0.1, add_h = 0.3) %>%

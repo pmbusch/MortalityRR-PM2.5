@@ -27,7 +27,7 @@ df <- data_model %>% mutate(
   pop65=population*age_65plus, 
   pop75=population*age_75plus)
 
-
+# Get dependent variables
 names_df <- names(df)
 dependent <- names_df[str_detect(names_df,"mr")]
 rm(names_df)
@@ -53,6 +53,7 @@ age <- c("scale(age_15_44)", "scale(age_45_64)","scale(age_65plus)")
 length(dependent)
 for (z in 1:length(dependent)){
   cat("Model #",z,"\n",sep="")
+  
   # Add age to case all ages
   if (str_detect(dependent[z],"allAges")){
     explanatory_dep <- c(explanatory, age)
@@ -74,31 +75,35 @@ for (z in 1:length(dependent)){
            mr_aux=!!parse_expr(dependent[z]),
            pop_aux=deaths_aux/mr_aux*1e5,
            pop_aux=as.integer(pop_aux))
-  # 
+  
   # df %>% dplyr::select(mrAdj_AllCauses,deathsAdj_AllCauses, 
+  #                      mr_LCA_0_30,deaths_LCA_0_30,
   #                      population, deaths_aux, mr_aux, pop_aux) %>% view()
   
   # Filter out zero deaths:
   df_aux <- df %>% filter(deaths_aux!=0)
   
-  ## Formula
-  formula_model <- reformulate(str_replace(dependent[z],"mr","deaths"), 
-                               termlabels = c(explanatory_dep,
-                                              "offset(log(pop_aux))"))
-  
-  # Model Possion
-  mod_loop <- glm(formula_model,
-                  data = df_aux,
-                  family = poisson(link=log),
-                  na.action=na.omit)
-  
-  # # Binomial
-  # mod_loop <- glm.nb(formula_model,
-  #                 data = df_aux,
-  #                 na.action=na.omit)
-  
-  
-  saveRDS(mod_loop, sprintf(file_mod,dependent[z]))
+  # Minimun of 30 obs to run the regression
+  if (nrow(df_aux)>30){
+    ## Formula
+    formula_model <- reformulate(str_replace(dependent[z],"mr","deaths"), 
+                                 termlabels = c(explanatory_dep,
+                                                "offset(log(pop_aux))"))
+    
+    # Model Possion
+    mod_loop <- glm(formula_model,
+                    data = df_aux,
+                    family = poisson(link=log),
+                    na.action=na.omit)
+    
+    # # Binomial
+    # mod_loop <- glm.nb(formula_model,
+    #                 data = df_aux,
+    #                 na.action=na.omit)
+    
+    
+    saveRDS(mod_loop, sprintf(file_mod,dependent[z]))
+  }
   rm(formula_model,mod_loop,explanatory_dep,df_aux)
 }
 rm(z)
@@ -151,11 +156,12 @@ a <- df_coef; b <- df_params;
 df_params$model %>% unique()
 df_params <- df_params %>% 
   mutate(dependendent=str_remove(model,".rsd"),
-         cause=str_extract(model,"AllCauses|CDP|CVD|RSP|CAN|LCA|ExtCauses"),
-         age=str_extract(model,"30plus|65plus|75plus|allAges"),
+         cause=str_extract(model,"AllCauses|CDP|CVD|RSP|CAN|LCA|ExtCauses|SUI"),
+         age=str_extract(model,"30plus|65plus|75plus|allAges|30_64|65_74|0_30"),
          sex=str_extract(model,"female|male")) %>% 
   replace_na(list(age="Adj.", sex="All")) %>% 
-  mutate(age=age %>% str_replace("plus","+") %>% str_replace("allAges","All Ages"),
+  mutate(age=age %>% str_replace("plus","+") %>% str_replace("_","-") %>% 
+           str_replace("allAges","All Ages"),
          sex=sex %>% str_replace("male","Male") %>% str_replace("feMale","Female"),
          cause=cause %>% str_replace("AllCauses", "All \n Causes") %>% 
            str_replace("ExtCauses", "Ext. \n Causes"))
@@ -181,12 +187,16 @@ write.table(df_coef_params,file_path, sep=';',row.names = F, append = T)
 # file_path <- "Data/Data_Model/model_coef.csv"
 # df_coef_params <- read.delim(file_path, sep=";",skip = 1)
 df_coef_params %>% names()
+df_coef_params$cause %>% unique()
+df_coef_params$age %>% unique()
+df_coef_params$sex %>% unique()
 
-
-levels_age <- c("Adj.","All Ages","30+","65+","75+")
+levels_age <- c("All Ages","Adj.","0-30","30-64","65-74","75+","30+","65+")
+levels_age <- c("All Ages","0-30","30-64","65-74","75+")
 levels_sex <- c("All","Male","Female")
 levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA","Ext. \n Causes")
 
+# Figure summary for all sex ------
 df_coef_params %>% 
   rowid_to_column() %>% 
   filter(term=="mp25_10um") %>% 
@@ -194,6 +204,7 @@ df_coef_params %>%
          age=factor(age,levels_age),
          sex=factor(sex, levels_sex),
          sign=conf.low>1) %>% 
+  filter(!is.na(age),!is.na(sex),!is.na(cause)) %>% # remove models not desired
   ggplot(aes(x=fct_rev(age), y=estimate))+
   geom_errorbar(aes(ymin=conf.low, ymax=conf.high))+
   geom_point(aes(col=sign), size=2, alpha=.5)+
@@ -213,4 +224,34 @@ df_coef_params %>%
 
 f_savePlot(last_plot(), sprintf(file_name,"MMR_summary"))
 # f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb"))
+
+
+## Figure summary for all causes -------
+levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA")
+df_coef_params %>% 
+  rowid_to_column() %>% 
+  filter(term=="mp25_10um") %>% 
+  mutate(cause=factor(cause,levels_causes),
+         age=factor(age,levels_age),
+         sex=factor(sex, levels_sex),
+         sign=conf.low>1) %>% 
+  filter(!is.na(age),sex=="All",!is.na(cause)) %>% # remove models not desired
+  ggplot(aes(x=fct_rev(age), y=estimate))+
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high))+
+  geom_point(aes(col=sign), size=2, alpha=.5)+
+  scale_color_manual(values = c("#666666","red"))+guides(col=F)+
+  geom_hline(yintercept = 1, linetype = "dashed")+
+  facet_wrap(~cause,ncol = 2)+
+  coord_flip(ylim = c(0.7,1.4))+
+  scale_y_continuous(labels = function(x) format(x, big.mark = " ",scientific = FALSE),
+                     breaks = seq(0.7,1.4,0.1))+
+  labs(x="Age group",
+       y=expression(paste(
+         "MRR: Excess risk per an increase in 10 ","\u03BCg/m\u00B3"," PM2.5"),sep=""), 
+       caption="MRR (with C.I. 95%) under different endpoints. Red point indicates a significant effect.")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(size=10, lineheight=.5))
+
+f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_causes"))
+
 ## EoF

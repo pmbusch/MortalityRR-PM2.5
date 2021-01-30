@@ -33,6 +33,7 @@ df %>% mutate(top10=mp25>20) %>% group_by(top10) %>%
 # Change names
 names(df) <- names(df) %>% f_replaceVar() %>% 
   str_replace_all("Commune name","Commune") %>% 
+  str_replace_all("Latitude","Latitude (S)") %>%
   str_replace_all("Population","Population [thousands]") %>% 
   str_replace_all("Adjusted mortality rate Cardiopulmonary","Adj. MR CDP") %>% 
   str_replace_all("Adjusted mortality rate Cancer","Adj. MR CAN") %>% 
@@ -46,8 +47,8 @@ df %>%
   autofit(add_w = 0.1, add_h = 0.3) %>%
   align(j=1:2, align = "left", part="all") %>% 
   align(j=3:9, align = "right", part="all") %>% 
-  colformat_num(j=c(3,4,5,9), digits=2) %>%
-  colformat_num(j=c(6,7,8), digits=0) %>%
+  colformat_num(j=c(3,4,5), digits=1) %>%
+  colformat_num(j=c(6,7,8,9), digits=0) %>%
   flextable::border(i=10, part="body",
                     border.bottom = officer::fp_border(style = "solid", width=2))
 # print(preview="pptx")
