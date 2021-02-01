@@ -102,7 +102,7 @@ f_replaceVar <- function(variable_orig){
 f_addTypeVar <- function(var){
   plyr::mapvalues(var,dictionary$variable,dictionary$group,
                   warn_missing = F) %>% 
-      factor(levels=c("Mortality", "Air pollution","Wood consumption",
+      factor(levels=c("Mortality", "Air pollution exposure","Wood consumption",
                       "Demography", "Socioeconomic", "Meteorology", "Geographic"))
 }
 

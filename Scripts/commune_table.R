@@ -13,10 +13,10 @@ df <- data_model %>%
 
 # Select variables to shown
 df <- df %>% 
-  dplyr::select(nombre_comuna, region,Latitude, mp25, population,mrAdj_AllCauses, mrAdj_CDP,
-         income_median, perc_woodHeating) %>% 
-  mutate(population=population/1e3,
-         income_median=income_median/1e3)
+  dplyr::select(nombre_comuna, region,Latitude, mp25, population,
+                mrAdj_AllCauses, mrAdj_CDP,
+                income_median_usd, perc_woodHeating) %>% 
+  mutate(population=population/1e3)
 
 
 # Top and bottom
@@ -34,11 +34,9 @@ df %>% mutate(top10=mp25>20) %>% group_by(top10) %>%
 names(df) <- names(df) %>% f_replaceVar() %>% 
   str_replace_all("Commune name","Commune") %>% 
   str_replace_all("Latitude","Latitude (S)") %>%
-  str_replace_all("Population","Population [thousands]") %>% 
+  str_replace_all("Population 2017","Population 2017 [thousands]") %>% 
   str_replace_all("Adjusted mortality rate Cardiopulmonary","Adj. MR CDP") %>% 
-  str_replace_all("Adjusted mortality rate Cancer","Adj. MR CAN") %>% 
-  str_replace_all("Median monthly income per capita",
-                  "Median monthly income per capita [thousands $CLP]")
+  str_replace_all("Adjusted mortality rate All Causes","Adj. MR All Causes")
 
 ## Table
 df %>% 

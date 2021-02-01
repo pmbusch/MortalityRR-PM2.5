@@ -111,6 +111,13 @@ data_model <- data_model %>%
 
 data_model %>% skim()
 
+## Income in USD 2017
+# Source: https://www.sii.cl/valores_y_fechas/dolar/dolar2017.htm
+usd_2017 <- 649
+data_model <- data_model %>% 
+  mutate(income_mean_usd=income_mean/usd_2017,
+         income_median_usd=income_median/usd_2017)
+rm(usd_2017)
 
 ## Total data used in the models
 communes_valid <- data_model %>% 

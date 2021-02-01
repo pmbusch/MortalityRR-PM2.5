@@ -26,7 +26,7 @@ df <- data_model %>%
          population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
          perc_rural, perc_ethnicityOrig,
          perc_overcrowding_medium,perc_overcrowding_high,
-         income_median,perc_less_highschool, perc_occupancy,
+         income_median_usd,perc_less_highschool, perc_occupancy,
          perc_isapre, perc_fonasa_CD, perc_fonasa_AB, 
          perc_woodCooking,perc_woodHeating,perc_woodWarmWater,
          hr_summer, hr_winter, tmed_summer, tmed_winter,
@@ -60,8 +60,6 @@ df_skim <- df_skim %>%
   mutate(Type=f_addTypeVar(skim_variable),
          skim_variable=f_replaceVar(skim_variable) %>% 
            str_replace("Population 2017","Population 2017 [thousands]") %>% 
-           str_replace("Median monthly income per capita",
-                       "Median monthly income per capita [thousands $CLP]") %>% 
            str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
            str_remove_all("Adjusted mortality rate")) %>% 
   arrange(Type)
@@ -109,9 +107,7 @@ df_skim <- df %>%
 df_skim <- df_skim %>% 
   mutate(Type=f_addTypeVar(Variable),
          Variable=f_replaceVar(Variable) %>% 
-           str_replace("Population","Population [thousands]") %>% 
-           str_replace("Median monthly income per capita",
-                       "Median monthly income per capita [thousands $CLP]") %>% 
+           str_replace("Population 2017","Population 2017 [thousands]") %>% 
          str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
            str_remove("\\[per 100,000\\]") %>% 
            str_remove_all("Adjusted mortality rate")) %>% 
@@ -120,7 +116,7 @@ df_skim <- df_skim[,c(7,1,2,3,4,5,6)] # Reorder columns
 
 
 df_skim %>% 
-  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000]")) %>% 
+  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000] \n 2017-2019")) %>% 
   flextable() %>% 
   colformat_num(big.mark=" ", digits=1, j=3:ncol(df_skim),
                 na_str="s/i") %>%
@@ -169,9 +165,7 @@ foot_note <- paste("n:",c(nrow(df),nrow(df)-n_mp25,
 df_skim <- df_skim %>% 
   mutate(Type=f_addTypeVar(skim_variable),
          skim_variable=f_replaceVar(skim_variable) %>% 
-           str_replace("Population","Population [thousands]") %>% 
-           str_replace("Median monthly income per capita",
-                       "Median monthly income per capita [thousands $CLP]") %>% 
+           str_replace("Population 2017","Population 2017 [thousands]") %>% 
            str_replace_all("\\) \\[per 100,000\\]","\\)") %>% 
            str_remove_all("Adjusted mortality rate")) %>% 
   arrange(Type)
@@ -181,7 +175,7 @@ df_skim <- df_skim[,c(5,1,2,3,4)] # Reorder columns
 df_skim %>% 
   rename(Variable=skim_variable, Total=indicator, 
          `Below 20 ug/m3`=no, `Above 20 ug/m3`=si) %>% 
-  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000]")) %>% 
+  mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000] \n 2017-2019")) %>% 
   flextable() %>% 
   bold(bold=T, part="header") %>% bold(j=1:2, bold=T) %>% 
   autofit(add_w = 0.1, add_h = 0.3) %>%
