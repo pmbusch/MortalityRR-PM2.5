@@ -66,7 +66,7 @@ ggplot(df_popPyramid, aes(x = age_group, y = pop, fill = sex)) +   # Fill column
                      labels = lbls) + # Labels
   coord_flip() +  # Flip axes 
   labs(title="Age Pyramid Chile",
-       x="Age Group",y="Population [thousands]", fill="Gender",
+       x="Age Group",y="Population [thousands]", fill="Sex",
        caption = "Source: Census Bureau 2017") +
   theme(plot.title = element_text(hjust = .5), 
         axis.ticks = element_blank(),
