@@ -9,7 +9,9 @@ source("Scripts/00-Functions.R", encoding = "UTF-8")
 source("Scripts/Aggregate_Data/population_agg.R", encoding = "UTF-8")
 df <- read_rds("Data/Data_Model/AirPollution_Data_raw.rsd")
 
-df %>% group_by(pollutant, unidad) %>% summarise(count=n()) %>% arrange(desc(count))
+df %>% group_by(pollutant, unidad) %>% 
+  summarise(count=n()) %>% 
+  arrange(desc(count))
 
 df %>% filter(pollutant=="mp2.5") %>% pull(valor) %>% range()
 df %>% group_by(tipo_dato) %>% summarise(count=n()) %>% arrange(desc(count))
@@ -44,14 +46,15 @@ df_conc <- df %>%
     valor=mean(valor, na.rm=T),
     disponibilidad=n()/365) %>% ungroup()
 
-# At least 80% days in the year with data, and the three years with data (2017-2019)
+# At least 80% days in the year with data, 
+# and the three years with data (2017-2019)
 valid_sites <- df_conc %>% 
   filter(season=="anual" & disponibilidad>0.8 & pollutant=="mp2.5") %>% 
   group_by(codigo_comuna,site) %>% 
   summarise(valor=mean(valor, na.rm=T),
             count=n()) %>% ungroup() %>% 
   filter(count==3) %>% pull(site)
-
+valid_sites %>% length()
 
 df_conc <- df_conc %>% 
   filter(site %in% valid_sites) %>% 
