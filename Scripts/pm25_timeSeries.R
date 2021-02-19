@@ -35,12 +35,13 @@ df_anual <- df_anual %>%
 df_anual %>% 
   ggplot(aes(year, count))+
   geom_col(fill="brown")+
-  geom_text(aes(label=count), size=5, vjust=-0.8)+
+  geom_text(aes(label=count), size=10, vjust=-0.8)+
   scale_x_continuous(breaks=2010:2019)+
   coord_cartesian(ylim=c(0,85), expand=F)+
   labs(x="", y="Number of monitor sites with PM2.5 data")+
-  theme_bw(20)+theme(panel.grid.major = element_blank(),
+  theme_bw(28)+theme(panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank())
+
 f_savePlot(last_plot(), sprintf(file_name,"NSite_years"))
 
 rm(df_anual)
@@ -50,12 +51,12 @@ rm(df_anual)
 # Monitor
 df_avg <- df_conc %>% 
   filter(year %in% 2017:2019) %>% 
-  group_by(site,region,codigo_comuna,nombre_comuna, year) %>% 
+  group_by(site,region,codigo_comuna,nombre_comuna, year,latitud) %>% 
   summarise(valor=mean(valor,na.rm=T),
             disponibilidad=n()/365) %>% ungroup()
 df_avg <- df_avg %>% 
   filter(disponibilidad>0.8) %>%
-  group_by(site, region, codigo_comuna,nombre_comuna) %>% 
+  group_by(site, region, codigo_comuna,nombre_comuna,latitud) %>% 
   summarise(valor=mean(valor, na.rm=T),
             count=n()) %>% ungroup() %>% 
   filter(count==3) %>% select(-count)
@@ -67,17 +68,19 @@ df_avg %>%
            str_detect(str_to_lower(site),str_to_lower(nombre_comuna)),
            paste(site,sep=""), 
            paste(nombre_comuna,site,sep="-"))) %>%
-  ggplot(aes(x=reorder(estacion, valor), y=valor, fill=highlight)) +
+  ggplot(aes(x=reorder(estacion, latitud), y=valor, fill=highlight)) +
   geom_col()+
   geom_hline(yintercept = 20, col="red", linetype = "dashed", size=1)+
   facet_grid(region~., scales = "free", space="free")+
   coord_flip(clip="off")+
   scale_fill_manual(values = c("#B0B0B0D0", "#BD3828D0"), guide = "none")+
   scale_x_discrete(name = NULL)+
-  scale_y_continuous(name="Annual average of PM2.5 2017-2019 [ug/m3]",
+  scale_y_continuous(name=expression(paste(
+    "Annual average of PM2.5 2017-2019 [",mu,"g/",m^3,"]", sep="")),
                      expand = c(0, 0),
                      labels=function(x) format(x,big.mark = " ", decimal.mark = ".", scientific = F))+
-  labs(caption="Red line sets the national standard (20 ug/m3)")
+  labs(caption= expression(paste(
+    "Red line sets the national standard [20 ",mu,"g/",m^3,")",sep="")))+
   theme(axis.line.y = element_blank(), axis.ticks.y = element_blank(),
         panel.grid.major.y = element_blank())
 # f_savePlot(last_plot(), sprintf(file_name,"Bar_Site"), dpi=600)
@@ -100,7 +103,8 @@ df_mes %>%
   facet_grid(cod_region~., scales = "free", space="free")+
   scale_fill_distiller(palette = "YlOrRd", type = 'seq', 
                        na.value = "white", direction = 1,
-                       name="Monthly avg. PM2.5 [ug/m3]",
+                       name=expression(paste(
+                         "Monthly avg. PM2.5 [",mu,"g/",m^3,"]",sep="")),
                        trans="sqrt",
                        guide = guide_legend(
                          label.position="bottom",
@@ -123,7 +127,7 @@ key_sites <- c("Bomberos","Las Condes","Parque O'Higgins",
                "21 de mayo-Los Angeles","Las Encinas Temuco","Valdivia",
                "Osorno","Coyhaique")
 
-## Scatter series ----
+## Scatter day series ----
 df_day <- df_conc %>% 
   group_by(year,month,day,site,latitud,codigo_comuna) %>% 
   summarise(valor=mean(valor,na.rm=T)) %>% ungroup() %>% 
@@ -138,7 +142,8 @@ df_day %>%
   ggplot(aes(x = date, y=valor,col = reorder(site_name, latitud))) + 
   geom_point(alpha=0.5)+
   facet_grid(zone~.)+
-  ylab("PM2.5 [ug/m3]")+labs(col="Site")+
+  ylab(expression(paste("PM2.5 [",mu,"g/",m^3,"]",sep="")))+
+  labs(col="Site")+
   scale_x_date(name="",date_labels = "%Y", date_breaks = "2 year")+
   scale_color_discrete(guide = guide_legend(reverse = TRUE))+
   coord_cartesian(expand=F,
@@ -151,7 +156,18 @@ ggsave(sprintf(file_name,"TimeSeries_Day"), last_plot(),dpi=600,
        width = 16, height = 12, units = "in")
 
 
+last_plot()+geom_smooth(method="loess",se=F, span=0.1)
+
 ## Monthly series -------
+df_mes <- df_conc %>% 
+  group_by(year,month,site,latitud,codigo_comuna) %>% 
+  summarise(valor=mean(valor,na.rm=T)) %>% ungroup() %>% 
+  mutate(date=paste(year,month,1,sep="-") %>%  
+           strptime(format="%Y-%m-%d") %>% 
+           as_date()) %>% 
+  left_join(map_commune)
+
+
 # Filter monitor sites
 df_mes_key <- df_mes %>% 
   filter(site %in% key_sites)
@@ -171,17 +187,38 @@ df_mes_key %>%
   # facet_wrap(~zone)+
   facet_grid(zone~.)+
   # scale_color_viridis_d()+
-  ylab("Monthly avg. PM2.5 [ug/m3]")+labs(col="Site")+
+  ylab(expression(paste("Monthly avg. PM2.5 [",mu,"g/",m^3,"]",sep="")))+
+  labs(col="Zone-Site")+
   scale_x_date(name="",date_labels = "%Y", date_breaks = "2 year")+
   scale_color_discrete(guide = guide_legend(reverse = TRUE))+
   coord_cartesian(expand=F,
                   ylim = c(0,150)
                   )+
   theme_bw(20)+theme(panel.grid.major = element_blank(),
-                     legend.text = element_text(size=12))
+                     legend.text = element_text(size=16))
 
 ggsave(sprintf(file_name,"TimeSeries_Month"), last_plot(),dpi=600,
        width = 16, height = 12, units = "in")
+
+df_mes_key %>% 
+  ggplot(aes(x = date, y=valor,
+             col = reorder(site_name, latitud), group= site_name)) + 
+  geom_point()+
+  geom_smooth(method="loess", se=F)+
+  facet_grid(zone~.)+
+  ylab(expression(paste("Monthly avg. PM2.5 [",mu,"g/",m^3,"]",sep="")))+
+  labs(col="Zone-Site")+
+  scale_x_date(name="",date_labels = "%Y", date_breaks = "2 year")+
+  scale_color_discrete(guide = guide_legend(reverse = TRUE))+
+  coord_cartesian(expand=F,
+                  ylim = c(0,150)
+  )+
+  theme_bw(20)+theme(panel.grid.major = element_blank(),
+                     legend.text = element_text(size=16))
+
+ggsave(sprintf(file_name,"TimeSeries_Month_Loess"), last_plot(),dpi=600,
+       width = 16, height = 12, units = "in")
+
 
 # # https://stackoverflow.com/questions/14840542/place-a-legend-for-each-facet-wrap-grid-in-ggplot2
 # library(gridExtra)
@@ -273,7 +310,8 @@ df_anual %>%
              label.size = 0.0)+
   # scale_color_viridis_d()+
   facet_grid(zone~.)+
-  scale_y_continuous(name = "Annual avg. PM2.5 [ug/m3]")+
+  scale_y_continuous(name =expression(paste(
+    "Annual avg. PM2.5 [",mu,"g/",m^3,"]",sep="")))+
   expand_limits(x=c(2010-2,2019+2))+
   scale_x_continuous(name="", breaks=2008:2021, 
                      labels = c("","",2010:2019,"",""))+
