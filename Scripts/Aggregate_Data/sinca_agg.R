@@ -5,6 +5,7 @@
 ## FIXED RADIUS ------
 # Load hourly monitor data: scrapped from SINCA --------
 # Population data
+file_name <- "Figures/ExposureEstimation/%s.%s"
 source("Scripts/00-Functions.R", encoding = "UTF-8")
 source("Scripts/Aggregate_Data/population_agg.R", encoding = "UTF-8")
 df <- read_rds("Data/Data_Model/AirPollution_Data_raw.rsd")
@@ -40,7 +41,8 @@ rm(df_anos)
 
 # Avg of concentracion
 df_conc <- df %>% 
-  group_by(codigo_comuna, pollutant, unidad, site,year,season) %>% 
+  group_by(codigo_comuna, pollutant, unidad, site, 
+           longitud, latitud,year,season) %>% 
   summarise(
     max_value=max(valor,na.rm=T), min_value=min(valor,na.rm=T),
     valor=mean(valor, na.rm=T),
@@ -58,7 +60,7 @@ valid_sites %>% length()
 
 df_conc <- df_conc %>% 
   filter(site %in% valid_sites) %>% 
-  group_by(codigo_comuna, site, season, pollutant) %>% 
+  group_by(codigo_comuna, site,longitud, latitud, season, pollutant) %>% 
   summarise( max_value=max(valor,na.rm=T), min_value=min(valor,na.rm=T),
              valor=mean(valor, na.rm=T)) %>% ungroup()
 rm(valid_sites)
@@ -108,45 +110,132 @@ df_mp <- df_avg %>%
   summarise(valor=weighted.mean(valor, 1/(dist)),
             count=n()) %>% ungroup()
 
-# # View map on zonas
-# library(RColorBrewer)
-# m2 <- left_join(mapa_zonas, df_mp, by=c("geocodigo")) %>% st_as_sf()
-# m3 <- m2 %>% filter(season=="anual") %>% 
-#   mapview(zcol="valor",col.regions=brewer.pal(9, "YlOrRd"))
-# mapshot(m3, "Figuras/ConcentracionMP25_zonas.html",
-#         selfcontained=F)
-# rm(m2,m3)
-
 ## Weighted avg per population for each commune
-df_mp <- df_mp %>% 
+df_mp_pop <- df_mp %>% 
   group_by(codigo_comuna, season, pollutant) %>% 
   summarise(valor=weighted.mean(valor, poblacion)) %>% ungroup() %>% 
   mutate(season=paste(pollutant,season,sep="_") %>% str_remove_all("_anual|\\.")) %>% 
   select(-pollutant) %>% spread(season,valor) %>% 
   right_join(map_commune) %>% left_join(codigos_territoriales)
 
-df_mp %>% filter(!is.na(mp25)) %>% nrow() # N commune:120
+df_mp_pop %>% filter(!is.na(mp25)) %>% nrow() # N commune:120
 
-# m1 <- mapview(df_mp %>% st_as_sf(), 
-#       label=paste(df_mp$nombre_comuna,": ",
-#                   round(df_mp$mp25,2),"[ug/m3]",sep=""),
-#       layer.name="Concentracion MP2.5 2016-2019",
-#       zcol="mp25",
-#       na.color="white",
-#       col.regions=brewer.pal(9, "YlOrRd"))
-# m1
-# mapshot(m1, "Figuras/ConcentracionMP25.html", selfContained=F)
-# rm(m1)
+# MAPS  ------
+library(RColorBrewer)
+library(mapview)
+library(leaflet)
+
+## Monitors, communes and district zones ----
+estaciones_sinca <- df_conc %>% 
+  group_by(site, codigo_comuna, longitud, latitud) %>% 
+  summarise(valor=mean(valor, na.rm=T)) %>% ungroup() %>% 
+  na.omit() %>% 
+  left_join(codigos_territoriales)
+
+estaciones_sinca <- st_as_sf(estaciones_sinca, 
+                             coords = c("longitud","latitud"),
+                             remove = F, 
+                             crs="+proj=longlat +ellps=GRS80 +no_defs")
+
+
+m_sinca <- mapview(estaciones_sinca, label=estaciones_sinca$site, col.regions="red",
+        layer.name = c("PM2.5 Monitoring Sites"))
+
+m_commune <- map_commune %>% 
+  left_join(codigos_territoriales) %>% 
+  mapview(layer.name = c("Communes"),
+          label=.$nombre_comuna,
+          lwd=4,
+          alpha.regions=0.1, col.regions="green")
+
+m_zonas <- mapa_zonas %>% st_as_sf() %>% 
+  left_join(codigos_territoriales) %>% 
+  mapview(label=.$nombre_comuna,
+          layer.name = c("District census zones"),
+          lwd=2.5,
+          alpha.regions=0.1, col.regions="purple")
+
+mapshot(m_sinca+m_commune+m_zonas,
+        sprintf(file_name,"Polygons_sites","html"),
+        selfcontained=F)
+  
+
+## Buffer and centroids ----
+zonas <- rmapshaper::ms_dissolve(mapa_zonas %>% st_as_sf(), 
+                                 field = "codigo_comuna") %>%
+  left_join(codigos_territoriales)
+zonas_centroide <- zonas %>% as.data.frame() %>% 
+  mutate(centroide=st_centroid(geometry),
+         cent_lon=map_dbl(geometry, ~st_centroid(.x)[[1]]),
+         cent_lat=map_dbl(geometry, ~st_centroid(.x)[[2]])) %>% 
+  st_as_sf(coords = c("cent_lon","cent_lat"),
+           remove = F, 
+           crs="+proj=longlat +ellps=GRS80 +no_defs")
+
+m_commune_centroid <- mapview(zonas_centroide, label=zonas_centroide$nombre_comuna,
+        layer.name = c("District census zones"),
+        col.regions="blue")
+
+# https://stackoverflow.com/questions/60895518/why-is-st-buffer-function-not-creating-an-r-object-that-correctly-displays-in-ma
+dist_buffer <- 20
+# EPSG:5361 = SIRGAS-Chile 2002 / UTM zone 19S
+
+buffer_sinca <- estaciones_sinca %>% st_transform(5361) %>% 
+  st_buffer(dist_buffer*1e3) %>% 
+  st_transform(4326)
+
+m_buffer <- mapview(buffer_sinca, label=buffer_sinca$site, col.regions="red",
+                    layer.name = c("Buffer 20km"),alpha.regions=0.1 )
+
+
+mapshot(m_sinca+m_commune+m_zonas+m_buffer+m_commune_centroid,
+        sprintf(file_name,"Buffer","html"),
+        selfcontained=F)
+
+
+## PM2.5 at district zones -----
+pm25_zones <- left_join(mapa_zonas, df_mp, by=c("geocodigo")) %>% st_as_sf()
+m_pm25_zones <- pm25_zones %>% filter(season=="anual") %>%
+  mapview(zcol="valor",
+          layer.name = c("PM2.5 [ug/m3]"),
+          at=seq(20,40,2),
+          # alpha.regions=0.3,
+          col.regions=brewer.pal(11, "YlOrRd"))
+
+mapshot(m_sinca+m_pm25_zones,
+        sprintf(file_name,"PM25_District","html"),
+        selfcontained=F)
+
+## PM2.5 exposure at communes -----
+m_pm25_commune <- df_mp_pop %>% st_as_sf() %>% 
+  filter(!is.na(mp25)) %>% 
+  mapview(
+    label=paste(.$nombre_comuna,": ",
+                round(.$mp25,2),"[ug/m3]",sep=""),
+    layer.name="PM2.5 Exposure [ug/m3]",
+    zcol="mp25",
+    na.color="white",
+    at=seq(20,40,2),
+    # alpha.regions=0.3,
+    col.regions=brewer.pal(11, "YlOrRd"))
+
+mapshot(m_sinca+m_pm25_commune, sprintf(file_name,"PM25_Commune","html"), 
+        selfContained=F)
+
 
 # Save data ----------
-df_mp %>% names()
-df_conc_save <- df_mp %>% 
+df_mp_pop %>% names()
+df_conc_save <- df_mp_pop %>% 
   select(codigo_comuna, mp25, mp25_fall, mp25_winter, mp25_spring, mp25_summer,
          mp25_2017, mp25_2018, mp25_2019, mp25_2020,
          mp10, mp10_fall, mp10_winter, mp10_spring, mp10_summer,
          mp10_2017, mp10_2018, mp10_2019, mp10_2020) %>% 
   filter(!is.na(mp25))
 saveRDS(df_conc_save, "Data/Data_Model/AirPollution_Data_20km.rsd")
+
+
+
+
 
 
 ## Alternativ method: Monitor in each commune ------------
