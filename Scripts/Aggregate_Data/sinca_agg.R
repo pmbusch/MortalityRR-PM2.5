@@ -222,6 +222,39 @@ m_pm25_commune <- df_mp_pop %>% st_as_sf() %>%
 mapshot(m_sinca+m_pm25_commune, sprintf(file_name,"PM25_Commune","html"), 
         selfContained=F)
 
+## Population map -----
+m_pop <- censo_2017_zonas %>% 
+  group_by(geocodigo) %>% 
+  summarise(poblacion=sum(poblacion,na.rm=T)) %>% ungroup() %>% 
+  right_join(mapa_zonas, by=c("geocodigo")) %>% 
+  st_as_sf() %>% 
+  mapview(zcol="poblacion",
+          layer.name = c("Population"),
+          col.regions=brewer.pal(12, "YlOrRd"))
+
+mapshot(m_pop+m_commune,
+        sprintf(file_name,"Population","html"),
+        selfcontained=F)
+
+# Pop density
+m_pop_dens <- censo_2017_zonas %>% 
+  group_by(geocodigo) %>% 
+  summarise(poblacion=sum(poblacion,na.rm=T)) %>% ungroup() %>% 
+  right_join(mapa_zonas, by=c("geocodigo")) %>% 
+  st_as_sf() %>% 
+  mutate(area=st_area(geometry) %>% as.numeric(),
+         pob_dens=poblacion/area*1e6) %>% 
+  filter(!is.na(pob_dens)) %>% 
+  mapview(zcol="pob_dens",
+          at=seq(0,60000,10000),
+          layer.name = c("Population Density \n [hab/km2]"),
+          col.regions=brewer.pal(6, "YlOrRd"))
+
+mapshot(m_pop_dens+m_commune,
+        sprintf(file_name,"Population_dens","html"),
+        selfcontained=F)
+
+
 
 # Save data ----------
 df_mp_pop %>% names()
