@@ -5,8 +5,8 @@
 ## Load Data ------
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
 load('.RData')
-file_name <- "Figuras/Analisis_Transversal/Modelos_Mortalidad_All/%s.png"
-file_mod <- "Data/Data_Modelo/Modelos_AllCauses/%s.rsd"
+# file_name <- "Figuras/Analisis_Transversal/Modelos_Mortalidad_All/%s.png"
+# file_mod <- "Data/Data_Modelo/Modelos_AllCauses/%s.rsd"
 source("Scripts/00-Functions.R", encoding = "UTF-8")
 source("Scripts/05-FunctionsCrossSectional.R", encoding = "UTF-8")
 
@@ -18,6 +18,13 @@ library(ggfortify)
 
 df <- data_model %>% arrange(population) %>% 
   mutate(deathsAdj=deathsAdj_ExtCauses-deathsAdj_SUI)
+
+# Mean vs Var: Overdispersion
+df %>% filter(commune_valid) %>% 
+  pull(deathsAdj_CDP) %>% mean()
+df %>% filter(commune_valid) %>% 
+  pull(deathsAdj_CDP) %>% var()
+
 
 # Base Model. Y= CDP -------------
 # Poisson distribution
@@ -45,8 +52,6 @@ f_tableMRR(mod_poisson, preview = "none", highlight = T)
 f_figMRR(mod_poisson)
 autoplot(mod_poisson) # Residuals and regression fit plot
 gam::plot.Gam(mod_poisson,se=T,rug=T,terms = "mp25")
-
-
 
 
 # f_savePlot(last_plot(), sprintf(file_name,"CardioPulmonar_Base"),dpi=150)
@@ -110,38 +115,49 @@ summary(mod_nb)
 nobs(mod_nb)
 f_tableMRR(mod_nb, preview = "none", highlight = T)
 f_figMRR(mod_nb)
+autoplot(mod_poisson)
+gam::plot.Gam(mod_poisson,se=T,rug=T,terms = "mp25")
+
 
 # Comparison nb vs poisson
 anova(mod_poisson, mod_nb)
-# no statistical difference
+# Likelihood ratio test
+lrtest(mod_poisson,mod_nb)
+# Negative binomial is a better fit
+
+# heteroscedasticity test
+# Breusch-Pagan test
+bptest(mod_nb)
+gqtest(mod_nb, fraction= 2/8*nobs(mod_nb), point= 0.5,
+       alternative = "greater")
+
 
 
 ## Base Model only Sign -------------
-mod_poisson_sign <-glm(deathsAdj_CDP ~ mp25_10um +
-                         scale(urbanDensity) +
-                         # scale(perc_female) +
-                         # scale(perc_ethnicityOrig) +
-                         # scale(perc_rural) +
-                         scale(perc_woodHeating) +
-                         scale(log(income_median)) + scale(perc_less_highschool) +
-                         scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
-                         scale(perc_overcrowding_medium)+
-                         scale(hr_anual) +
-                         # scale(heating_degree_15_winter) +
-                    offset(log(population)), 
-                  data = df,
-                  family = poisson(link=log),
-                  na.action=na.omit)
+mod_nb_sign <-glm.nb(deathsAdj_CDP ~ mp25_10um +
+                            scale(urbanDensity) +
+                            # scale(perc_female) +
+                            # scale(perc_ethnicityOrig) +
+                            # scale(perc_rural) +
+                            scale(perc_woodHeating) +
+                            scale(log(income_median)) + scale(perc_less_highschool) +
+                            scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                            scale(perc_overcrowding_medium)+
+                            scale(hr_anual) +
+                            # scale(heating_degree_15_winter) +
+                            offset(log(population)), 
+                          data = df,
+                          na.action=na.omit)
 
-summary(mod_poisson_sign)
-nobs(mod_poisson_sign)
-f_tableMRR(mod_poisson_sign, preview = "none", highlight = T)
-f_figMRR(mod_poisson_sign)
+# summary(mod_nb_sign)
+nobs(mod_nb_sign)
+f_tableMRR(mod_nb_sign, preview = "none", highlight = T)
+f_figMRR(mod_nb_sign)
 
 
 ## Base Model  Quartile PM2.5 -------------
 df_quartile <- data_model %>% 
-  filter(!is.na(mp25_10um)) %>% 
+  filter(!is.na(mp25_10um) & commune_valid) %>% 
   mutate(quartile_pm25=qgroup(mp25_10um, 4))
 df_quartile$quartile_pm25 %>% table()
 
@@ -154,58 +170,56 @@ label_cuartil <- df_quartile %>% group_by(quartile_pm25) %>%
 df_quartile <- df_quartile %>% left_join(label_cuartil, by=c("quartile_pm25"))
 df_quartile$cuartil_label %>% table()
 
-mod_poisson_quartile <- glm(deathsAdj_CDP ~ quartile_pm25 +
-                              scale(urbanDensity) +
-                              scale(perc_female) +
-                              scale(perc_ethnicityOrig) +
-                              scale(perc_rural) +
-                              scale(perc_woodHeating) +
-                              scale(log(income_median)) + scale(perc_less_highschool) +
-                              scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
-                              scale(perc_overcrowding_medium)+
-                              scale(hr_anual) +
-                              scale(heating_degree_15_winter) +
-                              offset(log(population)), 
-                            data = df_quartile,
-                            family = poisson(link=log),
-                            na.action=na.omit)
+mod_nb_quartile <- glm.nb(deathsAdj_CDP ~ quartile_pm25 +
+                            scale(urbanDensity) +
+                            scale(perc_female) +
+                            scale(perc_ethnicityOrig) +
+                            scale(perc_rural) +
+                            scale(perc_woodHeating) +
+                            scale(log(income_median)) + scale(perc_less_highschool) +
+                            scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                            scale(perc_overcrowding_medium)+
+                            scale(hr_anual) +
+                            scale(heating_degree_15_winter) +
+                            offset(log(population)), 
+                          data = df_quartile,
+                          na.action=na.omit)
 
-summary(mod_poisson_quartile)
-nobs(mod_poisson_quartile)
-f_tableMRR(mod_poisson_quartile, preview = "none", highlight = T)
-f_figMRR(mod_poisson_quartile)
-# rm(mod_poisson_quartile)
+summary(mod_nb_quartile)
+nobs(mod_nb_quartile)
+f_tableMRR(mod_nb_quartile, preview = "none", highlight = T)
+# f_figMRR(mod_nb_quartile)
+# rm(mod_nb_quartile)
 
 
 ## Model with dummy if has monitor ------------------
-df <- df %>% 
+data_aux <- df %>% 
   mutate(hasMonitor=!is.na(mp25))
 
-mod_poisson_dummy <- glm(deathsAdj_CDP ~ hasMonitor +
-                           scale(urbanDensity) +
-                           scale(perc_female) +
-                           scale(perc_ethnicityOrig) +
-                           scale(perc_rural) +
-                           scale(perc_woodHeating) +
-                           scale(log(income_median)) + scale(perc_less_highschool) +
-                           scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
-                           scale(perc_overcrowding_medium)+
-                           # scale(hr_anual) +
-                           # scale(heating_degree_15_winter) +
-                           offset(log(population)), 
-                         data = df,
-                         family = poisson(link=log),
-                         na.action=na.omit)
+mod_nb_dummy <- glm.nb(deathsAdj_CDP ~ hasMonitor +
+                         scale(urbanDensity) +
+                         scale(perc_female) +
+                         scale(perc_ethnicityOrig) +
+                         scale(perc_rural) +
+                         scale(perc_woodHeating) +
+                         scale(log(income_median)) + scale(perc_less_highschool) +
+                         scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                         scale(perc_overcrowding_medium)+
+                         # scale(hr_anual) +
+                         # scale(heating_degree_15_winter) +
+                         offset(log(population)), 
+                       data = data_aux,
+                       na.action=na.omit)
 
-summary(mod_poisson_dummy)
-nobs(mod_poisson_dummy)
-f_tableMRR(mod_poisson_dummy, preview = "none", highlight = T)
-f_figMRR(mod_poisson_dummy)
-# rm(mod_poisson_dummy)
+summary(mod_nb_dummy)
+nobs(mod_nb_dummy)
+f_tableMRR(mod_nb_dummy, preview = "none", highlight = T)
+# f_figMRR(mod_nb_dummy)
+# rm(mod_nb_dummy)
 
 
 ## Interaction with wood ---------------
-mod_poisson_interaction <- glm(deathsAdj_CDP ~ mp25_10um*scale(perc_woodHeating) +
+mod_nb_interaction <- glm.nb(deathsAdj_CDP ~ mp25_10um*scale(perc_woodHeating) +
                                  scale(urbanDensity) +
                                  scale(perc_female) +
                                  scale(perc_ethnicityOrig) +
@@ -218,15 +232,14 @@ mod_poisson_interaction <- glm(deathsAdj_CDP ~ mp25_10um*scale(perc_woodHeating)
                                  scale(heating_degree_15_winter) +
                                  offset(log(population)), 
                                data = df,
-                               family = poisson(link=log),
                                na.action=na.omit)
 
-summary(mod_poisson_interaction)
-nobs(mod_poisson_interaction)
-f_tableMRR(mod_poisson_interaction, preview = "none", highlight = T)
-f_figMRR(mod_poisson_interaction)
-autoplot(mod_poisson_interaction) # Residuals and regression fit plot
-gam::plot.Gam(mod_poisson_interaction,se=T,rug=T)
+summary(mod_nb_interaction)
+nobs(mod_nb_interaction)
+f_tableMRR(mod_nb_interaction, preview = "none", highlight = T)
+f_figMRR(mod_nb_interaction)
+autoplot(mod_nb_interaction) # Residuals and regression fit plot
+gam::plot.Gam(mod_nb_interaction,se=T,rug=T)
 # Marginal effect
 # library(margins)
 # margins(mod_poisson_interaction)
@@ -235,7 +248,36 @@ gam::plot.Gam(mod_poisson_interaction,se=T,rug=T)
 
 ## Population above 50K -------------
 df %>% filter(!is.na(mp25)&population>50*1e3) %>% nrow()
-mod_poisson_pop <- glm(deathsAdj_CDP ~ mp25_10um +
+mod_nb_pop <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                       scale(urbanDensity) +
+                       scale(perc_female) +
+                       scale(perc_ethnicityOrig) +
+                       scale(perc_rural) +
+                       scale(perc_woodHeating) +
+                       scale(log(income_median)) + scale(perc_less_highschool) +
+                       scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                       scale(perc_overcrowding_medium)+
+                       scale(hr_anual) +
+                       scale(heating_degree_15_winter) +
+                       offset(log(population)), 
+                     data = df %>% filter(population>50*1e3),
+                     # weights = log(population),
+                     na.action=na.omit)
+
+summary(mod_nb_pop)
+nobs(mod_nb_pop)
+f_tableMRR(mod_nb_pop, preview = "none", highlight = T)
+# f_figMRR(mod_nb_pop)
+
+## Without 10% smallest in population communes -------------
+data_pop <- df %>% 
+  arrange(population) %>% 
+  filter(commune_valid==1)
+# remove 10%
+# 105 
+data_pop <- data_pop[-1:-11,]
+
+mod_pop_high <- glm.nb(deathsAdj_CDP ~ mp25_10um +
                          scale(urbanDensity) +
                          scale(perc_female) +
                          scale(perc_ethnicityOrig) +
@@ -247,62 +289,89 @@ mod_poisson_pop <- glm(deathsAdj_CDP ~ mp25_10um +
                          scale(hr_anual) +
                          scale(heating_degree_15_winter) +
                          offset(log(population)), 
-                       data = df %>% filter(population>50*1e3),
-                       family = poisson(link=log),
+                       data = data_pop,
                        # weights = log(population),
                        na.action=na.omit)
 
-summary(mod_poisson_pop)
-nobs(mod_poisson_pop)
-f_tableMRR(mod_poisson_pop, preview = "none", highlight = T)
-f_figMRR(mod_poisson_pop)
+# summary(mod_pop_high)
+nobs(mod_pop_high)
+f_tableMRR(mod_pop_high, preview = "none", highlight = T)
+# f_figMRR(mod_pop_high)
+
+## Without 10% less and high polluted communes -------------
+data_aux <- df %>% 
+  arrange(mp25) %>% 
+  filter(commune_valid==1)
+# remove 10%
+# 105 / 10  = 11
+data_aux <- data_aux[-95:-105,]
+data_aux <- data_aux[-1:-11,]
+
+mod_high_pm25 <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                          scale(urbanDensity) +
+                          scale(perc_female) +
+                          scale(perc_ethnicityOrig) +
+                          scale(perc_rural) +
+                          scale(perc_woodHeating) +
+                          scale(log(income_median)) + scale(perc_less_highschool) +
+                          scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                          scale(perc_overcrowding_medium)+
+                          scale(hr_anual) +
+                          scale(heating_degree_15_winter) +
+                          offset(log(population)), 
+                        data = data_aux,
+                        # weights = log(population),
+                        na.action=na.omit)
+
+# summary(mod_high_pm25)
+nobs(mod_high_pm25)
+f_tableMRR(mod_high_pm25, preview = "none", highlight = T)
+# f_figMRR(mod_pop_high)
 
 
 # Without rm  -------
-mod_poisson_rmOut <- glm(deathsAdj_CDP ~ mp25_10um +
-                     # mp10_minus25+
-                     scale(urbanDensity) +
-                     scale(perc_female) +
-                     scale(perc_ethnicityOrig) +
-                     scale(perc_rural) +
-                     scale(perc_woodHeating) +
-                     scale(log(income_median)) + scale(perc_less_highschool) +
-                     scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
-                     scale(perc_overcrowding_medium)+
-                     scale(hr_anual) +
-                     scale(heating_degree_15_winter) +
-                     offset(log(population)), 
-                   data = data_model %>% filter(region!="Metropolitana"),
-                   family = poisson(link=log),
-                   na.action=na.omit)
+mod_nb_rmOut <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                         # mp10_minus25+
+                         scale(urbanDensity) +
+                         scale(perc_female) +
+                         scale(perc_ethnicityOrig) +
+                         scale(perc_rural) +
+                         scale(perc_woodHeating) +
+                         scale(log(income_median)) + scale(perc_less_highschool) +
+                         scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                         scale(perc_overcrowding_medium)+
+                         scale(hr_anual) +
+                         scale(heating_degree_15_winter) +
+                         offset(log(population)), 
+                       data = data_model %>% filter(region!="Metropolitana"),
+                       na.action=na.omit)
 
-# summary(mod_poisson_rmOut)
-nobs(mod_poisson_rmOut)
-f_tableMRR(mod_poisson_rmOut, preview = "none", highlight = T)
-# f_figMRR(mod_poisson_rmOut)
+# summary(mod_nb_rmOut)
+nobs(mod_nb_rmOut)
+f_tableMRR(mod_nb_rmOut, preview = "none", highlight = T)
+# f_figMRR(mod_nb_rmOut)
 
-# Without Pta Arenas  -------
-mod_poisson_rmOut <- glm(deathsAdj_CDP ~ mp25_10um +
-                           # mp10_minus25+
-                           scale(urbanDensity) +
-                           scale(perc_female) +
-                           scale(perc_ethnicityOrig) +
-                           scale(perc_rural) +
-                           scale(perc_woodHeating) +
-                           scale(log(income_median)) + scale(perc_less_highschool) +
-                           scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
-                           scale(perc_overcrowding_medium)+
-                           scale(hr_anual) +
-                           scale(heating_degree_15_winter) +
-                           offset(log(population)), 
-                         data = data_model %>% filter(nombre_comuna!="Punta Arenas"),
-                         family = poisson(link=log),
-                         na.action=na.omit)
+# Only RM  -------
+mod_nb_rm <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                      # mp10_minus25+
+                      scale(urbanDensity) +
+                      scale(perc_female) +
+                      scale(perc_ethnicityOrig) +
+                      scale(perc_rural) +
+                      scale(perc_woodHeating) +
+                      scale(log(income_median)) + scale(perc_less_highschool) +
+                      scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                      scale(perc_overcrowding_medium)+
+                      scale(hr_anual) +
+                      scale(heating_degree_15_winter) +
+                      offset(log(population)), 
+                    data = data_model %>% filter(region=="Metropolitana"),
+                    na.action=na.omit)
 
-# summary(mod_poisson_rmOut)
-nobs(mod_poisson_rmOut)
-f_tableMRR(mod_poisson_rmOut, preview = "none", highlight = T)
-# f_figMRR(mod_poisson_rmOut)
+# summary(mod_nb_rmOut)
+nobs(mod_nb_rm)
+f_tableMRR(mod_nb_rm, preview = "none", highlight = T)
+# f_figMRR(mod_nb_rmOut)
 
 
 ## Fixed Radius 50km ------------
@@ -317,7 +386,7 @@ df <- data_model %>%
   left_join(df_conc_50km, by=c("codigo_comuna")) %>% 
   mutate(mp25_10um=mp25/10)
 
-mod_rad50km <- glm(deathsAdj_CDP ~ mp25_10um +
+mod_rad50km <- glm.nb(deathsAdj_CDP ~ mp25_10um +
                            scale(urbanDensity) +
                            scale(perc_female) +
                            scale(perc_ethnicityOrig) +
@@ -330,7 +399,6 @@ mod_rad50km <- glm(deathsAdj_CDP ~ mp25_10um +
                            scale(heating_degree_15_winter) +
                            offset(log(population)), 
                          data = df,
-                         family = poisson(link=log),
                          na.action=na.omit)
 
 # summary(mod_rad50km)
@@ -350,25 +418,82 @@ df <- data_model %>%
   left_join(df_conc_100km, by=c("codigo_comuna")) %>% 
   mutate(mp25_10um=mp25/10)
 
-mod_rad100km <- glm(deathsAdj_CDP ~ mp25_10um +
-                     scale(urbanDensity) +
-                     scale(perc_female) +
-                     scale(perc_ethnicityOrig) +
-                     scale(perc_rural) +
-                     scale(perc_woodHeating) +
-                     scale(log(income_median)) + scale(perc_less_highschool) +
-                     scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
-                     scale(perc_overcrowding_medium)+
-                     scale(hr_anual) +
-                     scale(heating_degree_15_winter) +
-                     offset(log(population)), 
-                   data = df,
-                   family = poisson(link=log),
-                   na.action=na.omit)
+mod_rad100km <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                         scale(urbanDensity) +
+                         scale(perc_female) +
+                         scale(perc_ethnicityOrig) +
+                         scale(perc_rural) +
+                         scale(perc_woodHeating) +
+                         scale(log(income_median)) + scale(perc_less_highschool) +
+                         scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                         scale(perc_overcrowding_medium)+
+                         scale(hr_anual) +
+                         scale(heating_degree_15_winter) +
+                         offset(log(population)), 
+                       data = df,
+                       na.action=na.omit)
 
 # summary(mod_rad100km)
 nobs(mod_rad100km)
 f_tableMRR(mod_rad100km, preview = "none", highlight = T)
+
+## Fixed Radius 200km ------------
+df <- data_model %>% 
+  dplyr::select(codigo_comuna, nombre_comuna,
+                deathsAdj_AllCauses, deathsAdj_CDP,deathsAdj_CVD,
+                deathsAdj_RSP, deathsAdj_CAN,deathsAdj_LCA,deathsAdj_ExtCauses,
+                urbanDensity, perc_female,perc_ethnicityOrig,perc_rural,
+                perc_woodHeating,income_median, perc_less_highschool,
+                perc_fonasa_AB,perc_fonasa_CD,perc_overcrowding_medium,
+                hr_anual, heating_degree_15_winter, population) %>% 
+  left_join(df_conc_200km, by=c("codigo_comuna")) %>% 
+  mutate(mp25_10um=mp25/10)
+
+mod_rad200km <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                         scale(urbanDensity) +
+                         scale(perc_female) +
+                         scale(perc_ethnicityOrig) +
+                         scale(perc_rural) +
+                         scale(perc_woodHeating) +
+                         scale(log(income_median)) + scale(perc_less_highschool) +
+                         scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                         scale(perc_overcrowding_medium)+
+                         # scale(hr_anual) +
+                         # scale(heating_degree_15_winter) +
+                         offset(log(population)), 
+                       data = df,
+                       na.action=na.omit)
+nobs(mod_rad200km)
+f_tableMRR(mod_rad200km, preview = "none", highlight = T)
+
+## Fixed Radius Infinity ------------
+df <- data_model %>% 
+  dplyr::select(codigo_comuna, nombre_comuna,
+                deathsAdj_AllCauses, deathsAdj_CDP,deathsAdj_CVD,
+                deathsAdj_RSP, deathsAdj_CAN,deathsAdj_LCA,deathsAdj_ExtCauses,
+                urbanDensity, perc_female,perc_ethnicityOrig,perc_rural,
+                perc_woodHeating,income_median, perc_less_highschool,
+                perc_fonasa_AB,perc_fonasa_CD,perc_overcrowding_medium,
+                hr_anual, heating_degree_15_winter, population) %>% 
+  left_join(df_conc_Infkm, by=c("codigo_comuna")) %>% 
+  mutate(mp25_10um=mp25/10)
+
+mod_radInf <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                       scale(urbanDensity) +
+                       scale(perc_female) +
+                       scale(perc_ethnicityOrig) +
+                       scale(perc_rural) +
+                       scale(perc_woodHeating) +
+                       scale(log(income_median)) + scale(perc_less_highschool) +
+                       scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                       scale(perc_overcrowding_medium)+
+                       # scale(hr_anual) +
+                       # scale(heating_degree_15_winter) +
+                       offset(log(population)), 
+                     data = df,
+                     na.action=na.omit)
+nobs(mod_radInf)
+f_tableMRR(mod_radInf, preview = "none", highlight = T)
 
 
 # Log linear regression -------
@@ -388,6 +513,7 @@ mod_lm <- lm(log(deathsAdj_CDP) ~ mp25_10um +
              na.action=na.omit)
 summary(mod_lm)
 # R2: 0.99
+
 
 
 ##Step Model  Y = CDP ------------

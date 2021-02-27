@@ -16,6 +16,8 @@ source("Scripts/Aggregate_Data/deis_agg.R", encoding = "UTF-8")
 df_conc <- read_rds("Data/Data_Model/AirPollution_Data.rsd")
 df_conc_50km <- read_rds("Data/Data_Model/AirPollution_Data_50km.rsd")
 df_conc_100km <- read_rds("Data/Data_Model/AirPollution_Data_100km.rsd")
+df_conc_200km <- read_rds("Data/Data_Model/AirPollution_Data_200km.rsd")
+df_conc_Infkm <- read_rds("Data/Data_Model/AirPollution_Data_Infkm.rsd")
 # Meteorological Data
 df_meteo <- read_rds("Data/Data_Model/Meteorology_Data.rsd")
 # Census data

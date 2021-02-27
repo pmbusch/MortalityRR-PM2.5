@@ -21,7 +21,9 @@ df <- data_model %>%
   mutate(perc_fonasa=perc_fonasa_A+perc_fonasa_B+perc_fonasa_C+perc_fonasa_D,
          population=population/1e3,
          income_median=income_median/1e3) %>% 
-  select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,mrAdj_LCA, mrAdj_ExtCauses, 
+  select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,
+         mrAdj_LCA, 
+         # mrAdj_ExtCauses, 
          mp25,commune_valid,
          population,urbanDensity, age_15_44, age_45_64, age_65plus,perc_female, 
          perc_rural, perc_ethnicityOrig,
@@ -78,7 +80,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:6, part="body",i=c(7,8,11,21,27),
+  flextable::border(j=2:6, part="body",i=c(6,7,10,20,26),
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   footnote(j=4:6, value=as_paragraph(foot_note), part="header", inline=T)
 # print(preview="pptx")
@@ -118,17 +120,21 @@ df_skim <- df_skim[,c(7,1,2,3,4,5,6)] # Reorder columns
 df_skim %>% 
   mutate(Type=Type %>% str_replace("Mortality","Adjusted mortality \n rate [per 100,000] \n 2017-2019")) %>% 
   flextable() %>% 
-  colformat_num(big.mark=" ", digits=1, j=3:ncol(df_skim),
+  colformat_double(big.mark=" ", 
+                digits=1,
+                j=3:ncol(df_skim),
                 na_str="s/i") %>%
-  colformat_num(big.mark=" ", digits=0, j=c(3,5:ncol(df_skim)),
-                i=c(2,6,7,11,15,16,25,26), na_str="s/i") %>%
+  colformat_double(big.mark=" ",
+                digits=0,
+                j=c(3,5:ncol(df_skim)),
+                i=c(2,5,6,10,14,15,24,25), na_str="s/i") %>%
   bold(bold=T, part="header") %>% bold(j=1:2, bold=T) %>% 
   autofit(add_w = 0.1, add_h = 0.3) %>%
   align(j=1:2, align = "left", part="all") %>% 
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
          border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:7, part="body",i=c(7,8,11,21,27),
+  flextable::border(j=2:7, part="body",i=c(6,7,10,20,26),
          border.bottom = officer::fp_border(style = "solid", width=2))
   # print(preview="docx")
   # print(preview="pptx")
@@ -184,7 +190,7 @@ df_skim %>%
   merge_v(j = 1) %>%   fix_border_issues(part = "all") %>% 
   flextable::border(j=1, part="body",
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
-  flextable::border(j=2:5, part="body",i=c(7,8,11,21,27),
+  flextable::border(j=2:5, part="body",i=c(6,7,10,20,26),
                     border.bottom = officer::fp_border(style = "solid", width=2)) %>%
   footnote(j=3:5, value=as_paragraph(foot_note), part="header", inline=T,
            ref_symbols = c("a", "b", "c")) 

@@ -9,8 +9,10 @@ lista_paquetes <- c("tidyverse", "kableExtra","openair","chilemapas","lwgeom",
                     "skimr", "readr", "patchwork", "ggridges", "lubridate","ggrepel")
 
 # Revisar si paquetes están instalados. Si lo están, cargará los paquetes. Si no lo están, instalará y luego cargará los paquetes.
-nuevos_paquetes <- lista_paquetes[!(lista_paquetes %in% installed.packages()[,"Package"])]
-lapply(nuevos_paquetes, install.packages); lapply(lista_paquetes, require, character.only = TRUE)
+# nuevos_paquetes <- lista_paquetes[!(lista_paquetes %in% installed.packages()[,"Package"])]
+# lapply(nuevos_paquetes, install.packages)
+lapply(lista_paquetes, require, character.only = TRUE)
 
-rm(lista_paquetes, nuevos_paquetes)
+rm(lista_paquetes) 
+   # nuevos_paquetes)
 # EoF

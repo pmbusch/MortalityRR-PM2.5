@@ -9,7 +9,7 @@ load(".RData")
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
 file_name <- "Figures/%s.png"
 file_mod <- "Data/Data_Model/Models_Loop/%s.rsd"
-# file_mod <- "Data/Data_Model/Models_Loop_nb/%s.rsd" # Negative binomial
+file_mod <- "Data/Data_Model/Models_Loop_nb/%s.rsd" # Negative binomial
 source("Scripts/00-Functions.R", encoding = "UTF-8")
 source("Scripts/05-FunctionsCrossSectional.R", encoding = "UTF-8")
 
@@ -91,15 +91,15 @@ for (z in 1:length(dependent)){
                                                 "offset(log(pop_aux))"))
     
     # Model Possion
-    mod_loop <- glm(formula_model,
-                    data = df_aux,
-                    family = poisson(link=log),
-                    na.action=na.omit)
-    
-    # # Binomial
-    # mod_loop <- glm.nb(formula_model,
+    # mod_loop <- glm(formula_model,
     #                 data = df_aux,
+    #                 family = poisson(link=log),
     #                 na.action=na.omit)
+    
+    # Binomial
+    mod_loop <- glm.nb(formula_model,
+                    data = df_aux,
+                    na.action=na.omit)
     
     
     saveRDS(mod_loop, sprintf(file_mod,dependent[z]))
@@ -109,7 +109,7 @@ for (z in 1:length(dependent)){
 rm(z)
 
 # check
-model_cdp<- read_rds(sprintf(file_mod,"mrAdj_CDP"));summary(model_cdp)
+model_cdp<- read_rds(sprintf(file_mod,"mrAdj_CDP"));summary(model_cdp);nobs(model_cdp)
 f_tableMRR(model_cdp, highlight = T); rm(model_cdp)
 
 ## Load into DF all models---------
@@ -117,7 +117,7 @@ library(tools)
 library(broom) # to get info of fitted models easily
 
 url <- "Data/Data_Model/Models_Loop/"
-# url <- "Data/Data_Model/Models_Loop_nb/"
+url <- "Data/Data_Model/Models_Loop_nb/"
 (models_rsd <- list.files(url))
 
 # Save Info
@@ -172,12 +172,12 @@ df_coef_params <- df_coef %>% left_join(df_params, by = c("model"))
 
 ## Save data in Excel
 file_path <- "Data/Data_Model/model_params.csv"
-# file_path <- "Data/Data_Model/model_params_nb.csv"
+file_path <- "Data/Data_Model/model_params_nb.csv"
 cat('sep=; \n',file = file_path)
 write.table(df_params,file_path, sep=';',row.names = F, append = T)
 
 file_path <- "Data/Data_Model/model_coef.csv"
-# file_path <- "Data/Data_Model/model_coef_nb.csv"
+file_path <- "Data/Data_Model/model_coef_nb.csv"
 cat('sep=; \n',file = file_path)
 write.table(df_coef_params,file_path, sep=';',row.names = F, append = T)
 
@@ -222,8 +222,8 @@ df_coef_params %>%
   theme(plot.title = element_text(hjust = 0.5),
         plot.caption = element_text(size=10, lineheight=.5))
 
-f_savePlot(last_plot(), sprintf(file_name,"MMR_summary"))
-# f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb"))
+# f_savePlot(last_plot(), sprintf(file_name,"MMR_summary"))
+f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb"))
 
 
 ## Figure summary for all causes -------
@@ -252,6 +252,6 @@ df_coef_params %>%
   theme(plot.title = element_text(hjust = 0.5),
         plot.caption = element_text(size=10, lineheight=.5))
 
-f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_causes"))
-
+# f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_causes"))
+f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_causes_nb"))
 ## EoF

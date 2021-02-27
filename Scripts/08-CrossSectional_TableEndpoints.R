@@ -32,25 +32,65 @@ formula_initial <- formula(deathsAdj_CDP ~
                              offset(log(population)))
 
 
+
 ## Run models with different endpoint ------------
 endpoints <- c("deathsAdj_AllCauses", "deathsAdj_CDP","deathsAdj_CVD",
-               "deathsAdj_RSP", "deathsAdj_CAN","deathsAdj_LCA","deathsAdj_ExtCauses")
+               "deathsAdj_RSP", "deathsAdj_CAN","deathsAdj_LCA")
+               # "deathsAdj_ExtCauses")
+
+# Table All Ages
+# endpoints <- c("deaths_AllCauses_allAges", "deaths_CDP_allAges",
+#                "deaths_CVD_allAges","deaths_RSP_allAges",
+#                "deaths_CAN_allAges","deaths_LCA_allAges")
+# 
+# formula_initial <- formula(deaths_AllCauses_allAges ~ 
+#                              mp25_10um +
+#                              scale(age_15_44)+
+#                              scale(age_45_64)+
+#                              scale(age_65plus)+
+#                              scale(urbanDensity) +
+#                              scale(perc_female) +
+#                              scale(perc_ethnicityOrig) +
+#                              scale(perc_rural) +
+#                              scale(perc_woodHeating) +
+#                              scale(log(income_median)) + scale(perc_less_highschool) +
+#                              scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+#                              scale(perc_overcrowding_medium)+
+#                              scale(hr_anual) +
+#                              scale(heating_degree_15_winter) +
+#                              offset(log(population)))
 
 # mod_CDP <- glm(reformulate(deparse(formula_initial[[3]]), response = "deaths_CDP"), 
 #                data = df, na.action=na.omit, family=poisson(link=log))
 
 df <- data_model
+
+# 50km radious
+# df <- data_model %>% 
+#   dplyr::select(codigo_comuna, nombre_comuna,
+#                 deathsAdj_AllCauses, deathsAdj_CDP,deathsAdj_CVD,
+#                 deathsAdj_RSP, deathsAdj_CAN,deathsAdj_LCA,deathsAdj_ExtCauses,
+#                 urbanDensity, perc_female,perc_ethnicityOrig,perc_rural,
+#                 perc_woodHeating,income_median, perc_less_highschool,
+#                 perc_fonasa_AB,perc_fonasa_CD,perc_overcrowding_medium,
+#                 hr_anual, heating_degree_15_winter, population) %>% 
+#   left_join(df_conc_50km, by=c("codigo_comuna")) %>% 
+#   mutate(mp25_10um=mp25/10)
+
+
+
 ## Loop to extract info from all models
 i <- 0
 for (e in endpoints){
   # cat(e," \n",sep="")
   # Run Model: Poisson
-  mod <- glm(reformulate(deparse(formula_initial[[3]]), response = e),
-                 data = df, na.action=na.omit, family=poisson(link=log))
+  # mod <- glm(reformulate(deparse(formula_initial[[3]]), response = e),
+                 # data = df, na.action=na.omit, family=poisson(link=log))
   
   # Binomial
-  # mod <- glm.nb(reformulate(deparse(formula_initial[[3]]), response = e), 
-  #            data = df, na.action=na.omit)
+  mod <- glm.nb(reformulate(deparse(formula_initial[[3]]), response = e),
+             data = df, na.action=na.omit)
+  cat(nobs(mod)," \n")
   
   # Get Coefficients
   est <- summary(mod)$coefficients[,1:4] %>% as.data.frame() %>% 
@@ -106,7 +146,8 @@ foot_note <- c("MRR (p-value)",
                "Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1. Estimated MRR with a p-value below 0.05 are in bold.")
 
 names(est_all) <- c("Variable","Adj. MR All Causes", "Adj. MR CDP","Adj. MR CVD",
-                    "Adj. MR RSP","Adj. MR CAN","Adj. MR LCA","Adj. MR Ext. Causes")
+                    "Adj. MR RSP","Adj. MR CAN","Adj. MR LCA")
+                    # "Adj. MR Ext. Causes")
 
 
 # Function to extract p-value from text, return boolean if it is below 0.05
@@ -120,8 +161,6 @@ f_extractPvalue <- function(text){
 }
 
 est_all$`Adj. MR All Causes` %>% f_extractPvalue()
-
-slice
 
 
 est_all %>% 
@@ -147,8 +186,8 @@ est_all %>%
   bold(j=4, i=f_extractPvalue(est_all$`Adj. MR CVD`)) %>% 
   bold(j=5, i=f_extractPvalue(est_all$`Adj. MR RSP`)) %>% 
   bold(j=6, i=f_extractPvalue(est_all$`Adj. MR CAN`)) %>% 
-  bold(j=7, i=f_extractPvalue(est_all$`Adj. MR LCA`)) %>% 
-  bold(j=8, i=f_extractPvalue(est_all$`Adj. MR Ext. Causes`))
+  bold(j=7, i=f_extractPvalue(est_all$`Adj. MR LCA`))
+  # bold(j=8, i=f_extractPvalue(est_all$`Adj. MR Ext. Causes`))
   # print(preview="docx")
 
 # EoF

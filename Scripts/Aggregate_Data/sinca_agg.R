@@ -120,6 +120,20 @@ df_mp_pop <- df_mp %>%
 
 df_mp_pop %>% filter(!is.na(mp25)) %>% nrow() # N commune:120
 
+
+
+# Save data ----------
+df_mp_pop %>% names()
+df_conc_save <- df_mp_pop %>% 
+  select(codigo_comuna, mp25, mp25_fall, mp25_winter, mp25_spring, mp25_summer,
+         mp25_2017, mp25_2018, mp25_2019, mp25_2020,
+         mp10, mp10_fall, mp10_winter, mp10_spring, mp10_summer,
+         mp10_2017, mp10_2018, mp10_2019, mp10_2020) %>% 
+  filter(!is.na(mp25))
+saveRDS(df_conc_save, "Data/Data_Model/AirPollution_Data_20km.rsd")
+
+
+
 # MAPS  ------
 library(RColorBrewer)
 library(mapview)
@@ -139,7 +153,7 @@ estaciones_sinca <- st_as_sf(estaciones_sinca,
 
 
 m_sinca <- mapview(estaciones_sinca, label=estaciones_sinca$site, col.regions="red",
-        layer.name = c("PM2.5 Monitoring Sites"))
+                   layer.name = c("PM2.5 Monitoring Sites"))
 
 m_commune <- map_commune %>% 
   left_join(codigos_territoriales) %>% 
@@ -158,7 +172,7 @@ m_zonas <- mapa_zonas %>% st_as_sf() %>%
 mapshot(m_sinca+m_commune+m_zonas,
         sprintf(file_name,"Polygons_sites","html"),
         selfcontained=F)
-  
+
 
 ## Buffer and centroids ----
 zonas <- rmapshaper::ms_dissolve(mapa_zonas %>% st_as_sf(), 
@@ -173,8 +187,8 @@ zonas_centroide <- zonas %>% as.data.frame() %>%
            crs="+proj=longlat +ellps=GRS80 +no_defs")
 
 m_commune_centroid <- mapview(zonas_centroide, label=zonas_centroide$nombre_comuna,
-        layer.name = c("District census zones"),
-        col.regions="blue")
+                              layer.name = c("District census zones"),
+                              col.regions="blue")
 
 # https://stackoverflow.com/questions/60895518/why-is-st-buffer-function-not-creating-an-r-object-that-correctly-displays-in-ma
 dist_buffer <- 20
@@ -253,22 +267,6 @@ m_pop_dens <- censo_2017_zonas %>%
 mapshot(m_pop_dens+m_commune,
         sprintf(file_name,"Population_dens","html"),
         selfcontained=F)
-
-
-
-# Save data ----------
-df_mp_pop %>% names()
-df_conc_save <- df_mp_pop %>% 
-  select(codigo_comuna, mp25, mp25_fall, mp25_winter, mp25_spring, mp25_summer,
-         mp25_2017, mp25_2018, mp25_2019, mp25_2020,
-         mp10, mp10_fall, mp10_winter, mp10_spring, mp10_summer,
-         mp10_2017, mp10_2018, mp10_2019, mp10_2020) %>% 
-  filter(!is.na(mp25))
-saveRDS(df_conc_save, "Data/Data_Model/AirPollution_Data_20km.rsd")
-
-
-
-
 
 
 ## Alternativ method: Monitor in each commune ------------
