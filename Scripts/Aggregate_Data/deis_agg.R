@@ -31,25 +31,25 @@ df_deis %>% group_by(glosa_grupo_diag2) %>% summarise(count=n()) %>% arrange(des
 ## Grupos de interes
 ## All: Todas las filas
 ## All causes: Causas de morbilidad y mortalidad. A00-Q99 is.na(cap_diag2)
-df_deis %>% filter(is.na(cap_diag2)) %>% nrow()/3
+df_deis %>% filter(is.na(cap_diag2)) %>% nrow()
 ## Cardio: Enfermedades del sistema circulatorio. All I
-df_deis %>% filter(str_detect(subcateg_diag1,"I")) %>% nrow()/3
+df_deis %>% filter(str_detect(subcateg_diag1,"I")) %>% nrow()
 df_deis %>% filter(str_detect(subcateg_diag1,"I")) %>% pull(cap_diag1) %>% unique()
 ## Pulmonar: Enfermedades del sistema respiratorio. All J
-df_deis %>% filter(str_detect(subcateg_diag1,"J")) %>% nrow()/3
+df_deis %>% filter(str_detect(subcateg_diag1,"J")) %>% nrow()
 df_deis %>% filter(str_detect(subcateg_diag1,"J")) %>% pull(cap_diag1) %>% unique()
 ## Cardiopulmonar: Suma cardio+pulmonar. All I and J
-df_deis %>% filter(str_detect(subcateg_diag1,"I|J")) %>% nrow()/3
+df_deis %>% filter(str_detect(subcateg_diag1,"I|J")) %>% nrow()
 df_deis %>% filter(str_detect(subcateg_diag1,"I|J")) %>% pull(cap_diag1) %>% unique()
 ## Cancer: Tumores [Neoplasias]. All C
-df_deis %>% filter(str_detect(subcateg_diag1,"C")) %>% nrow()/3
+df_deis %>% filter(str_detect(subcateg_diag1,"C")) %>% nrow()
 df_deis %>% filter(str_detect(subcateg_diag1,"C")) %>% pull(grupo_diag1) %>% unique()
 ## Lung Cancer
-df_deis %>% filter(categ_diag1 %in% c("C34","C33")) %>% nrow()/3
+df_deis %>% filter(categ_diag1 %in% c("C34","C33")) %>% nrow()
 ## External causes: Suplement of all causes
-df_deis %>% filter(!is.na(cap_diag2)) %>% nrow()/3
+df_deis %>% filter(!is.na(cap_diag2)) %>% nrow()
 ## Suicides
-df_deis %>% filter(grupo_diag2=="X60-X84") %>% nrow()/3
+df_deis %>% filter(grupo_diag2=="X60-X84") %>% nrow()
 
 # Explore external causes
 df_deis %>% names()
