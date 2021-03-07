@@ -8,7 +8,7 @@ source("Scripts/00-CargaLibrerias.R", encoding = "UTF-8")
 load(".RData")
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
 file_name <- "Figures/%s.png"
-file_mod <- "Data/Data_Model/Models_Loop/%s.rsd"
+# file_mod <- "Data/Data_Model/Models_Loop/%s.rsd"
 file_mod <- "Data/Data_Model/Models_Loop_nb/%s.rsd" # Negative binomial
 source("Scripts/00-Functions.R", encoding = "UTF-8")
 source("Scripts/05-FunctionsCrossSectional.R", encoding = "UTF-8")
@@ -116,7 +116,7 @@ f_tableMRR(model_cdp, highlight = T); rm(model_cdp)
 library(tools)
 library(broom) # to get info of fitted models easily
 
-url <- "Data/Data_Model/Models_Loop/"
+# url <- "Data/Data_Model/Models_Loop/"
 url <- "Data/Data_Model/Models_Loop_nb/"
 (models_rsd <- list.files(url))
 
@@ -171,12 +171,12 @@ df_params <- df_params %>%
 df_coef_params <- df_coef %>% left_join(df_params, by = c("model"))
 
 ## Save data in Excel
-file_path <- "Data/Data_Model/model_params.csv"
+# file_path <- "Data/Data_Model/model_params.csv"
 file_path <- "Data/Data_Model/model_params_nb.csv"
 cat('sep=; \n',file = file_path)
 write.table(df_params,file_path, sep=';',row.names = F, append = T)
 
-file_path <- "Data/Data_Model/model_coef.csv"
+# file_path <- "Data/Data_Model/model_coef.csv"
 file_path <- "Data/Data_Model/model_coef_nb.csv"
 cat('sep=; \n',file = file_path)
 write.table(df_coef_params,file_path, sep=';',row.names = F, append = T)
@@ -192,7 +192,8 @@ df_coef_params$age %>% unique()
 df_coef_params$sex %>% unique()
 
 levels_age <- c("All Ages","Adj.","0-30","30-64","65-74","75+","30+","65+")
-levels_age <- c("All Ages","0-30","30-64","65-74","75+")
+levels_age <- c("All Ages","Adj.","0-30","30-64","65-74","75+")
+# levels_age <- c("All Ages","0-30","30-64","65-74","75+")
 levels_sex <- c("All","Male","Female")
 levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA","Ext. \n Causes")
 
@@ -251,6 +252,7 @@ df_coef_params %>%
        caption="MRR (with C.I. 95%) under different endpoints. Red point indicates a significant effect.")+
   theme(plot.title = element_text(hjust = 0.5),
         plot.caption = element_text(size=10, lineheight=.5))
+
 
 # f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_causes"))
 f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_causes_nb"))

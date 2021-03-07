@@ -515,7 +515,6 @@ summary(mod_lm)
 # R2: 0.99
 
 
-
 ##Step Model  Y = CDP ------------
 # https://stats.stackexchange.com/questions/20836/algorithms-for-automatic-model-selection/20856#20856
 library(caret)
