@@ -196,6 +196,8 @@ levels_age <- c("All Ages","Adj.","0-30","30-64","65-74","75+")
 # levels_age <- c("All Ages","0-30","30-64","65-74","75+")
 levels_sex <- c("All","Male","Female")
 levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA","Ext. \n Causes")
+levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA")
+
 
 # Figure summary for all sex ------
 df_coef_params %>% 

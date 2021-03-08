@@ -288,9 +288,8 @@ df_coef_params %>%
   scale_color_manual(values = c("#666666","red"))+guides(col=F)+
   geom_hline(yintercept = 1, linetype = "dashed")+
   facet_wrap(~cause)+
-  coord_flip(ylim = c(0.8,1.2))+
-  scale_y_continuous(labels = function(x) format(x, big.mark = " ",scientific = FALSE),
-                     breaks = seq(0.8,1.2,0.1))+
+  coord_flip()+
+  scale_y_continuous(labels = function(x) format(x, big.mark = " ",scientific = FALSE))+
   labs(x="",
        y=expression(paste(
          "MRR: Excess risk per an increase in 10 ","\u03BCg/m\u00B3"," PM2.5"),sep=""), 
