@@ -495,6 +495,31 @@ mod_radInf <- glm.nb(deathsAdj_CDP ~ mp25_10um +
 nobs(mod_radInf)
 f_tableMRR(mod_radInf, preview = "none", highlight = T)
 
+## Interaction age vs NSE -------------
+mod_nb_intNSE <- glm.nb(deaths_CDP_allAges ~ mp25_10um +
+                          scale(urbanDensity) +
+                          scale(age_15_44)+
+                          scale(age_45_64)+
+                          scale(age_65plus)+
+                          scale(perc_female) +
+                          scale(perc_ethnicityOrig) +
+                          scale(perc_rural) +
+                          scale(perc_woodHeating) +
+                          scale(log(income_median)) + scale(perc_less_highschool) +
+                          scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                          scale(perc_overcrowding_medium)+
+                          scale(hr_anual) +
+                          scale(heating_degree_15_winter) +
+                          scale(log(income_median))* scale(age_65plus)+
+                          offset(log(population)), 
+                        data = df,
+                        na.action=na.omit)
+
+# summary(mod_nb_intNSE)
+nobs(mod_nb_intNSE)
+f_tableMRR(mod_nb_intNSE, preview = "none", highlight = T)
+gam::plot.Gam(mod_nb_intNSE,se=T,rug=T,terms = "mp25")
+
 
 # Log linear regression -------
 mod_lm <- lm(log(deathsAdj_CDP) ~ mp25_10um +
