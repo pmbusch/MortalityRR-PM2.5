@@ -115,8 +115,31 @@ summary(mod_nb)
 nobs(mod_nb)
 f_tableMRR(mod_nb, preview = "none", highlight = T)
 f_figMRR(mod_nb)
-autoplot(mod_poisson)
-gam::plot.Gam(mod_poisson,se=T,rug=T,terms = "mp25")
+autoplot(mod_nb)
+gam::plot.Gam(mod_nb,se=T,rug=T,terms = "mp25")
+
+# Residuals plot map ----
+df_map <- df %>% 
+  filter(commune_valid) %>% 
+  mutate(deathsAdj_CDP_Predicted=predict(mod_nb,type="response"),
+         mrAdj_CDP=deathsAdj_CDP/population*1e5,
+         mrAdj_CDP_predicted=deathsAdj_CDP_Predicted/population*1e5,
+         residual_mrAdjCDP=mrAdj_CDP-mrAdj_CDP_predicted)
+
+df_map <- left_join(map_commune, df_map, by=c("codigo_comuna")) 
+
+
+# Note: need to run functions on InterctiveMaps.R script
+leaflet(df_map) %>% 
+  addTiles() %>% 
+  f_leafleft(df_map,df_map$residual_mrAdjCDP,
+             "residual_mrAdjCDP", 
+             unidad = "deaths per 100,000 habs") %>% 
+  addLayersControl(
+    baseGroups = c("OpenStreetMap","Toner", "Toner by Stamen"),
+    overlayGroups = c("residual_mrAdjCDP")) %>% 
+  hideGroup(c("residual_mrAdjCDP"))
+rm(df_map)
 
 
 # Comparison nb vs poisson
