@@ -210,6 +210,7 @@ library(broom) # to get info of fitted models easily
 url <- "Data/Data_Model/Sensitivity_Loop/"
 (folders_model <- list.files(url))
 
+
 # Save Info
 df_params <- data.frame()
 df_coef <- data.frame()
@@ -280,11 +281,14 @@ df_coef_params %>%
   filter(term=="mp25_10um") %>% 
   mutate(cause=factor(cause,levels_causes),
          case=factor(case,levels_case),
-         sign=conf.low>1) %>% 
+         sign=conf.low>1,
+         estimate_label=paste0(round(estimate,2),
+                               " (",round(p.value,2),")")) %>% 
   filter(!is.na(cause)) %>% # remove models not desired
   ggplot(aes(x=fct_rev(case), y=estimate))+
   geom_errorbar(aes(ymin=conf.low, ymax=conf.high))+
   geom_point(aes(col=sign), size=2, alpha=.5)+
+  geom_text(aes(label=estimate_label),nudge_x = 0.3)+ # LABEL
   scale_color_manual(values = c("#666666","red"))+guides(col=F)+
   geom_hline(yintercept = 1, linetype = "dashed")+
   facet_wrap(~cause)+
@@ -293,10 +297,38 @@ df_coef_params %>%
   labs(x="",
        y=expression(paste(
          "MRR: Excess risk per an increase in 10 ","\u03BCg/m\u00B3"," PM2.5"),sep=""), 
-       caption="MRR (with C.I. 95%) under different endpoints. Red point indicates a significant effect.")+
+       caption="MRR with C.I. 95% under different endpoints (p-value in parenthesis). Red point indicates a significant effect.")+
   theme(plot.title = element_text(hjust = 0.5),
         plot.caption = element_text(size=10, lineheight=.5))
 
 # f_savePlot(last_plot(), sprintf(file_name,"MMR_summary"))
-f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb"))
+f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb_label"))
+# f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb"))
 
+
+# Scatter Figure (LAC idea) -----------
+df_coef_params %>% 
+  rowid_to_column() %>% 
+  filter(term=="mp25_10um") %>% 
+  mutate(cause=factor(cause,levels_causes),
+         case=factor(case,levels_case),
+         sign=conf.low>1) %>% 
+  filter(!is.na(cause)) %>% # remove models not desired
+  ggplot(aes(x=p.value, y=estimate))+
+  geom_point(size=2, alpha=.5)+
+  geom_label_repel(aes(label=cause))+
+  scale_color_manual(values = c("#666666","red"))+guides(col=F)+
+  geom_vline(xintercept = 0.05, linetype = "dashed",col="red")+
+  geom_vline(xintercept = 0.1, linetype = "dashed",col="green")+
+  facet_wrap(~case)+
+  scale_y_continuous(labels = function(x) format(x, big.mark = " ",scientific = FALSE))+
+  scale_x_continuous(breaks = c(0,0.05,0.1,0.2,0.3,0.4))+
+  labs(x="P-value",
+       y=expression(paste(
+         "MRR: Excess risk per an increase in 10 ","\u03BCg/m\u00B3"," PM2.5"),sep=""), 
+       caption="MRR for PM2.5 under different endpoints.")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.caption = element_text(size=10, lineheight=.5))
+
+
+f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_scatter"))
