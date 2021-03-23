@@ -109,9 +109,11 @@ df %>%
   ggplot(aes(mp25,pm25_new,col=zone))+
   geom_point(alpha=.7)+
   facet_wrap(~radius)+
+  geom_abline(slope=1, intercept=0, linetype="dashed")+
   labs(x="PM2.5 Fixed radius 20km", 
        y="PM2.5 with higher radius",
-       color="")+
+       color="",
+       caption="Dashed line shows the identity line")+
   theme_bw(20)+theme(panel.grid.major = element_blank())
 
 f_savePlot(last_plot(),

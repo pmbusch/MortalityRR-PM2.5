@@ -543,6 +543,40 @@ nobs(mod_nb_intNSE)
 f_tableMRR(mod_nb_intNSE, preview = "none", highlight = T)
 gam::plot.Gam(mod_nb_intNSE,se=T,rug=T,terms = "mp25")
 
+# Without high NSE coomunes ------
+# See which communes to remove
+# Las Condes, Vitacura, Providencia
+df %>% 
+  filter(commune_valid) %>%
+  filter(income_median_usd>500) %>% 
+  ggplot(aes(reorder(nombre_comuna, income_median_usd),
+             income_median_usd))+
+  geom_col()+
+  coord_flip()+
+  xlab("Comuna")+ylab("Median monthly income USD")+
+  theme_bw(20)+
+  theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank())
+  
+
+mod_nb_NSE <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                          scale(urbanDensity) +
+                          scale(perc_female) +
+                          scale(perc_ethnicityOrig) +
+                          scale(perc_rural) +
+                          scale(perc_woodHeating) +
+                          scale(log(income_median)) + scale(perc_less_highschool) +
+                          scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                          scale(perc_overcrowding_medium)+
+                          scale(hr_anual) +
+                          scale(heating_degree_15_winter) +
+                          offset(log(population)), 
+                        data = df %>% 
+                       filter(!(nombre_comuna %in% c("Las Condes", "Vitacura", "Providencia"))),
+                        na.action=na.omit)
+
+nobs(mod_nb_NSE)
+f_tableMRR(mod_nb_NSE, preview = "none", highlight = T)
+
 
 # Log linear regression -------
 mod_lm <- lm(log(deathsAdj_CDP) ~ mp25_10um +
