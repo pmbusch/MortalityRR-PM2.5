@@ -7,8 +7,6 @@ source("Scripts/00-CargaLibrerias.R", encoding = "UTF-8")
 load('.RData')
 source("Scripts/00-Functions.R", encoding = "UTF-8")
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
-# file_name <- "Scripts/Analisis_General/Figuras/%s.png"
-
 
 
 # MR VS PM2.5 ---------
@@ -35,6 +33,47 @@ p1
 p1+geom_text_repel(aes(label=nombre_comuna), alpha=.8)
 # f_savePlot(last_plot(), sprintf(file_name, "Muertes_vs_MP25_name"), dpi=150)
 
+# All causes considered in the same plot
+
+# Data adjustment first
+df <- data_model %>% 
+  filter(commune_valid) %>% 
+  mutate(latitude=map_dbl(geometry, ~st_centroid(.x)[[2]])) %>% 
+  dplyr::select(nombre_comuna,latitude,zone,mp25,population,
+                mrAdj_CDP,
+                mrAdj_RSP,
+                mrAdj_CVD,
+                mrAdj_CAN,
+                mrAdj_LCA,
+                mrAdj_AllCauses,
+                mrAdj_ExtCauses) %>% 
+  pivot_longer(c(-nombre_comuna,-latitude,-zone,-mp25,-population),
+               names_to="key",values_to="value") %>% 
+  mutate(cause=str_remove_all(key,"mr_|mrAdj_|_allAges") %>% 
+           factor(levels=c("AllCauses","CDP","CVD","RSP",
+                           "CAN","LCA","ExtCauses")),
+         key=NULL)
+
+p1 <- df %>%
+  mutate(nombre_comuna=if_else(population>1e5|mp25>30,
+                               nombre_comuna,"")) %>%
+  ggplot(aes(mp25, value))+
+  geom_point(alpha=.7, aes(size=population,col=zone))+
+  facet_wrap(~cause, scales="free_y",)+
+  scale_size(labels=function(x) format(x,big.mark = " ", digits=0, scientific = F))+
+  guides(colour = guide_legend(override.aes = list(size=4)))+
+  labs(x=f_replaceVar("mp25"), 
+       y="Adjusted Mortality Rate (per 100,000)",
+       size=f_replaceVar("population"),
+       color="",
+       caption="Note that Y-axis is different for each plot")+
+  theme_bw(20)+theme(panel.grid.major = element_blank())
+p1
+f_savePlot(p1,"Figures/Scatter_PM25/PM25_MRAdj.png", dpi=600)
+# p1+geom_text_repel(aes(label=nombre_comuna), alpha=.8)
+
+p1+geom_smooth(method="loess",se=T,span=0.5)
+f_savePlot(last_plot(),"Figures/Scatter_PM25/PM25_MRAdj_loess.png", dpi=600)
 
 ## MR Cardiopulmonar vs Population (n) -----------
 # Test wheter n has major implication for MR (more variance)
