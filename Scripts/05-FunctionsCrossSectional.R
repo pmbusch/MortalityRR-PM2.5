@@ -32,7 +32,7 @@ f_tableCoef <- function(model, preview="none", highlight=F){
                   na_str="s/i") %>% 
     bold(bold=T, part="header") %>% 
     autofit(add_w = 0.1, add_h = 0.3) %>%
-    align(j=1, align = "left", part="all") %>% 
+    flextable::align(j=1, align = "left", part="all") %>% 
     footnote(j=6, value=as_paragraph(foot_note), part="header", inline=T)
   
   if (highlight){
@@ -92,7 +92,7 @@ f_tableMRR <- function(model, preview="none", highlight=F){
     flextable() %>% 
     bold(bold=T, part="header") %>% 
     autofit(add_w = 0.1, add_h = 0.3) %>%
-    align(j=1, align = "left", part="all") %>% 
+    flextable::align(j=1, align = "left", part="all") %>% 
     footnote(j=5, value=as_paragraph(foot_note), part="header", inline=T)
   
   if (highlight){

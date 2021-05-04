@@ -17,7 +17,8 @@ library(gamm4)
 library(ggfortify)
 
 df <- data_model %>% arrange(population) %>% 
-  mutate(deathsAdj=deathsAdj_ExtCauses-deathsAdj_SUI)
+  mutate(deathsAdj=deathsAdj_ExtCauses-deathsAdj_SUI,
+         Latitude=-map_dbl(geometry, ~st_centroid(.x)[[2]]))
 
 # Mean vs Var: Overdispersion
 df %>% filter(commune_valid) %>% 
@@ -107,9 +108,11 @@ mod_nb <- glm.nb(deathsAdj_CDP ~ mp25_10um +
                    scale(perc_overcrowding_medium)+
                    scale(hr_anual) +
                    scale(heating_degree_15_winter) +
+                   # scale(Latitude) +
                    offset(log(population)), 
                  data = df,
                  na.action=na.omit)
+
 
 summary(mod_nb)
 nobs(mod_nb)
@@ -140,6 +143,56 @@ leaflet(df_map) %>%
     overlayGroups = c("residual_mrAdjCDP")) %>% 
   hideGroup(c("residual_mrAdjCDP"))
 rm(df_map)
+
+# Moran index ------------ 
+# for spatial autocorrelation, for the residuals
+# see https://mgimond.github.io/Spatial/spatial-autocorrelation-in-r.html
+library(spdep)
+# remove NA's
+df_aux <- df_map %>% dplyr::select(residual_mrAdjCDP) %>% na.omit()
+dim(df_aux)
+# remove neighbors with no links
+df_aux <- df_aux[-c(1,49,56,57),]
+# neighbors between coomunes
+(nb <- poly2nb(df_aux, queen=T))
+lw <- nb2listw(nb, style="W", zero.policy=TRUE)
+# Moran
+moran.test(df_aux$residual_mrAdjCDP, lw)
+# simulation to compute p-value
+MC <- moran.mc(df_aux$residual_mrAdjCDP, lw, nsim=599)
+MC
+plot(MC, main="", las=1)
+
+
+# Spatial Lagged Model --------------
+df_neighbor <- df %>% filter(commune_valid) %>% .[-c(1,49,56,57),]
+# local mean using neighbors
+df_neighbor$loc_mean <- lapply(lw$neighbours, 
+                              function(i) mean(df_neighbor$mrAdj_CDP[i])) %>% 
+  unlist()
+# correlation
+cor(df_neighbor$mrAdj_CDP,df_neighbor$loc_mean)
+# model
+mod_nb_spatialLag <- glm.nb(deathsAdj_CDP ~ mp25_10um +
+                              scale(loc_mean)+
+                              scale(urbanDensity) +
+                              scale(perc_female) +
+                              scale(perc_ethnicityOrig) +
+                              scale(perc_rural) +
+                              scale(perc_woodHeating) +
+                              scale(log(income_median)) + scale(perc_less_highschool) +
+                              scale(perc_fonasa_AB) + scale(perc_fonasa_CD) +
+                              scale(perc_overcrowding_medium)+
+                              scale(hr_anual) +
+                              scale(heating_degree_15_winter) +
+                              offset(log(population)), 
+                            data = df_neighbor,
+                            na.action=na.omit)
+
+summary(mod_nb_spatialLag)
+nobs(mod_nb_spatialLag)
+f_tableMRR(mod_nb_spatialLag, preview = "none", highlight = T)
+
 
 
 # Comparison nb vs poisson
