@@ -163,6 +163,28 @@ MC <- moran.mc(df_aux$residual_mrAdjCDP, lw, nsim=599)
 MC
 plot(MC, main="", las=1)
 
+# Binomial model with bootstrap -----
+# Source: https://stackoverflow.com/questions/54749641/bootstrapping-with-glm-model
+
+# data structure for results
+nboot <- 1000
+bres <- matrix(NA,
+               nrow=nboot,
+               ncol=length(coef(mod_nb)),
+               dimnames=list(rep=seq(nboot),
+                             coef=names(coef(mod_nb))))
+# bootstrap
+set.seed(101)
+bootsize <- 105
+df_boot <- df %>% filter(commune_valid)
+for (i in seq(nboot)) {
+  bdat <- df_boot[sample(nrow(df_boot),size=bootsize,replace=TRUE),]
+  bfit <- update(mod_nb, data=bdat)  ## refit with new data
+  bres[i,] <- coef(bfit)
+}
+# output
+data.frame(mean_est=colMeans(exp(bres)),
+           t(apply(exp(bres),2,quantile,c(0.025,0.975))))
 
 # Spatial Lagged Model --------------
 df_neighbor <- df %>% filter(commune_valid) %>% .[-c(1,49,56,57),]
