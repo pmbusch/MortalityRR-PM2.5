@@ -97,6 +97,13 @@ df[c(320,344),] %>% pull(nombre_comuna)
 
 
 ## Model Binomial -------------
+# deathsAdj_AllCauses
+# deathsAdj_CDP
+# deathsAdj_CVD
+# deathsAdj_RSP
+# deathsAdj_CAN
+# deathsAdj_LCA
+
 mod_nb <- glm.nb(deathsAdj_CDP ~ mp25_10um +
                    scale(urbanDensity) +
                    scale(perc_female) +

@@ -63,6 +63,7 @@ endpoints <- c("deathsAdj_AllCauses", "deathsAdj_CDP","deathsAdj_CVD",
 # mod_CDP <- glm(reformulate(deparse(formula_initial[[3]]), response = "deaths_CDP"), 
 #                data = df, na.action=na.omit, family=poisson(link=log))
 
+# data_model <- read_rds("Data/Data_Model/Data_model.rsd")
 df <- data_model
 
 # 50km radious

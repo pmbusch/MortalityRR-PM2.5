@@ -210,7 +210,6 @@ library(broom) # to get info of fitted models easily
 url <- "Data/Data_Model/Sensitivity_Loop/"
 (folders_model <- list.files(url))
 
-
 # Save Info
 df_params <- data.frame()
 df_coef <- data.frame()
@@ -263,16 +262,27 @@ df_params <- df_params %>%
 df_coef_params <- df_coef %>% 
   left_join(df_params, by = c("model","case")) %>% 
   mutate(case=case %>% str_replace_all("Population commune  50K",
-                                       "Population commune >50,000"))
+                                       "Population commune >50,000") %>% 
+           str_replace_all("10_","10%"))
   
 ## Summary figure ----------------
 df_coef_params$cause %>% unique()
 levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA")
 levels_causes <- c("All \n Causes","CDP","CVD","RSP")
+levels_causes <- c("All Causes (A00-Q99)","Cardiopulmonary (all I and J)",
+                   "Cardiovascular (all I)","Pulmonary (all J)")
 levels_case <- c("Base", "Fixed Radius 50km", "Fixed Radius 100km",
                 "Population commune >50,000", 
                 "Only Metropolitan region","Without Metropolitan region",
                 "10% in each extreme of PM2.5 excluded")
+
+df_coef_params <- df_coef_params %>% 
+  mutate(cause=case_when(
+    cause=="All \n Causes"~"All Causes (A00-Q99)",
+    cause=="CDP"~"Cardiopulmonary (all I and J)",
+    cause=="CVD"~"Cardiovascular (all I)",
+    cause=="RSP"~"Pulmonary (all J)",
+    T ~ cause))
 
 
 # Figure summary  ------
@@ -282,13 +292,14 @@ df_coef_params %>%
   mutate(cause=factor(cause,levels_causes),
          case=factor(case,levels_case),
          sign=conf.low>1,
+         est_label=round(estimate,2),
          estimate_label=paste0(round(estimate,2),
                                " (",round(p.value,2),")")) %>% 
   filter(!is.na(cause)) %>% # remove models not desired
   ggplot(aes(x=fct_rev(case), y=estimate))+
   geom_errorbar(aes(ymin=conf.low, ymax=conf.high))+
   geom_point(aes(col=sign), size=2, alpha=.5)+
-  geom_text(aes(label=estimate_label),nudge_x = 0.3)+ # LABEL
+  geom_text(aes(label=est_label),nudge_x = 0.3)+ # LABEL
   scale_color_manual(values = c("#666666","red"))+guides(col=F)+
   geom_hline(yintercept = 1, linetype = "dashed")+
   facet_wrap(~cause)+
@@ -297,13 +308,33 @@ df_coef_params %>%
   labs(x="",
        y=expression(paste(
          "MRR: Excess risk per an increase in 10 ","\u03BCg/m\u00B3"," PM2.5"),sep=""), 
-       caption="MRR with C.I. 95% under different endpoints (p-value in parenthesis). Red point indicates a significant effect.")+
+       # caption="MRR with C.I. 95% under different endpoints. Red point indicates a significant effect."
+       )+
   theme(plot.title = element_text(hjust = 0.5),
         plot.caption = element_text(size=10, lineheight=.5))
 
+pdf("Figures/Sensitivity/MMR_summary_nb_label.pdf",
+    width = 14.87, height = 9.30)
+last_plot()
+dev.off()
+
+library(devEMF)
+emf("Figures/Sensitivity/MMR_summary_nb_label.emf",
+    width = 14.87, height = 9.30)
+last_plot()
+dev.off()
+
+ggsave(file="Figures/Sensitivity/MMR_summary_nb_label.svg", 
+       plot=last_plot(), width=14.87, height=9.30,units = "in")
+
 # f_savePlot(last_plot(), sprintf(file_name,"MMR_summary"))
-f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb_label"))
+ggsave(sprintf(file_name,"MMR_summary_nb_label"),
+       last_plot(),
+       dpi=900,
+       width = 14.87, height = 9.30, units = "in")
 # f_savePlot(last_plot(), sprintf(file_name,"MMR_summary_nb"))
+
+
 
 
 # Scatter Figure (LAC idea) -----------

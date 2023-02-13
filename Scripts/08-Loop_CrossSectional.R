@@ -220,8 +220,9 @@ df_coef_params %>%
   labs(x="Age group",
        y=expression(paste(
          "MRR: Excess risk per an increase in 10 ","\u03BCg/m\u00B3"," PM2.5"),sep=""), 
-       caption="MRR (with C.I. 95%) under different endpoints. Red point indicates a significant effect. \n 
-  Columns Grid: Different mortality causes. Rows Grid: Stratified by Sex. Colums Inside: By different age adjustment")+
+  #      caption="MRR (with C.I. 95%) under different endpoints. Red point indicates a significant effect. \n 
+  # Columns Grid: Different mortality causes. Rows Grid: Stratified by Sex. Colums Inside: By different age adjustment."
+       )+
   theme(plot.title = element_text(hjust = 0.5),
         plot.caption = element_text(size=10, lineheight=.5))
 
