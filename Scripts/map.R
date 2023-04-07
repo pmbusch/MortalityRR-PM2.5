@@ -103,7 +103,6 @@ p_stgo_mp25 <- df %>% filter(map_rm==1) %>%
 # Figure PM2.5
 p_north_mp25|p_center_mp25|p_south_mp25|p_stgo_mp25
 
-
 # Figure Mortality rate CDP -------------
 limit_mrCDP <- c(0,360)
 
@@ -173,8 +172,15 @@ p_north_mrCDP|p_center_mrCDP|p_south_mrCDP|p_stgo_mrCDP
 (p_north_mp25|p_center_mp25|p_south_mp25|p_stgo_mp25)/
   (p_north_mrCDP|p_center_mrCDP|p_south_mrCDP|p_stgo_mrCDP)
 
-f_savePlot(last_plot(), file_path = "Figures/map.png",dpi=900)
+f_savePlot(last_plot(), file_path = "Figures/Maps/map.png",dpi=900)
 
+# Export to svg and PDF
+ggsave(file="Figures/Maps/Map.svg", plot=last_plot(),
+       width = 14.87, height = 9.30, units = "in")
+pdf("Figures/Maps/Map.pdf")
+(p_north_mp25|p_center_mp25|p_south_mp25|p_stgo_mp25)/
+  (p_north_mrCDP|p_center_mrCDP|p_south_mrCDP|p_stgo_mrCDP)
+dev.off()
 
 
 ### Chile side-side -----------------
@@ -202,6 +208,60 @@ p_mr <- df %>%
 
 
 p_mp25|p_mr
+
+# Export to svg and PDF
+ggsave(file="Figures/Maps/Chile.svg", plot=last_plot(),
+       width = 14.87, height = 9.30, units = "in")
+pdf("Figures/Maps/Chile.pdf")
+p_mp25|p_mr
+dev.off()
+
+
+## Figure just Santiago -------------
+p_stgo_mp25 <- df %>% filter(map_rm==1) %>% 
+  ggplot() +
+  geom_sf(aes(fill = mp25, geometry = geometry), lwd=lwd_maps) +
+  geom_sf(data=monitor %>% filter(mapa_rm==1), 
+          aes(geometry=geometry), shape=4)+
+  scale_fill_distiller(
+    palette = "RdYlBu", type = 'seq', na.value = "white", direction = -1,
+    name=expression(paste(
+      "PM2.5 2017-2019  [","\u03BCg/m\u00B3","]"),sep=""),
+    limits = c(20,30),
+    labels=function(x) format(x,big.mark = " ", decimal.mark = ".", scientific = F))+
+  labs(title = "Santiago",x="", y="",
+       caption = "PM2.5 monitor site marked with cross") + 
+  theme_minimal(base_size = 14)+
+  theme(legend.position = "right")+
+  coord_sf(xlim = c(-71, -70.4), ylim = c(-33.8, -33.3),datum = NA,expand=F)
+
+
+p_stgo_mrCDP <- df %>% filter(map_rm==1) %>% 
+  mutate(hasMonitor=if_else(commune_valid,"Yes","No")) %>% 
+  ggplot() +
+  geom_sf(aes(fill = mrAdj_CDP, geometry = geometry, col=hasMonitor), lwd=lwd_maps) +
+  scale_color_manual(values = c("Yes"="black","No"="#666666"))+
+  scale_fill_distiller(
+    palette = "RdYlBu", type = 'seq', na.value = "white", direction = -1,
+    name="Adj. MR CDP [per 100,000]",
+    limits = limit_mrCDP,
+    labels=function(x) format(x,big.mark = " ", decimal.mark = ".", scientific = F))+
+  labs(title = "Santiago",x="", y="", 
+       caption="Commune with PM2.5 estimation with black border") + 
+  theme_minimal(base_size = 14)+
+  theme(legend.position = "right")+
+  guides(col=F)+
+  coord_sf(xlim = c(-71, -70.4), ylim = c(-33.8, -33.3),datum = NA,expand=F)
+
+p_stgo_mp25/p_stgo_mrCDP
+
+
+# Export to svg and PDF
+ggsave(file="Figures/Maps/Stgo.svg", plot=last_plot(),
+       width = 14.87, height = 9.30, units = "in")
+pdf("Figures/Maps/Stgo.pdf")
+p_stgo_mp25/p_stgo_mrCDP
+dev.off()
 
 
 # EoF

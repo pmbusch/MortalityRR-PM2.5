@@ -39,6 +39,8 @@ df_popPyramid$sexo %>% unique()
 df_popPyramid <- df_popPyramid %>% 
   mutate(sex=if_else(sexo=="hombre","Male","Female"))
 
+df_pop <- df_popPyramid
+
 # Summary per age and sex
 df_popPyramid <- df_popPyramid %>% 
   group_by(sex, age_group) %>% 
@@ -75,6 +77,53 @@ ggplot(df_popPyramid, aes(x = age_group, y = pop, fill = sex)) +   # Fill column
 
 # Save figure
 f_savePlot(last_plot(), file_path = "Figures/agePyramid.png")
+
+# Spagethi plot by all Sex -------
+
+df_pop <- df_pop %>% 
+  group_by(nombre_comuna, age_group) %>% 
+  summarise(pop=sum(poblacion, na.rm = T)) %>% ungroup()
+df_pop$pop %>% sum()
+
+df_pop <- df_pop %>% 
+  mutate(pop=pop/1e3) %>% 
+  group_by(nombre_comuna) %>% 
+  mutate(pop_perc=pop/sum(pop)) %>% ungroup()
+
+df_pop %>% group_by(nombre_comuna) %>% summarise(sum(pop_perc))
+
+# national level
+nat <- df_pop %>% 
+  group_by( age_group) %>% 
+  summarise(pop=sum(pop, na.rm = T)) %>% ungroup() %>% 
+  mutate(pop_perc=pop/sum(pop))
+nat$nombre_comuna <- "National"
+
+# Communes included in the analysis
+df_pop <- df_pop %>% filter(nombre_comuna %in% communes_valid)
+  
+df_pop$nombre_comuna %>% unique() %>% length()
+
+
+# Plot
+ggplot(df_pop, aes(x = age_group, y = pop_perc, group = nombre_comuna)) +   # Fill column
+  geom_line(alpha=0.5) +  
+  geom_point(size=2,alpha=0.5)+
+  geom_line(data=nat,col="brown",linewidth=2)+
+  geom_point(size=3,data=nat,col="brown")+
+  scale_y_continuous(labels = scales::percent)+
+  coord_cartesian(expand = F)+
+  # coord_flip() +  # Flip axes
+  labs(title="Age distribution Chile for the 105 communes with PM2.5 data",
+       x="Age Group",y="Population %",
+       caption = "Source: Census Bureau 2017") +
+  theme(plot.title = element_text(hjust = .5), 
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.caption = element_text(size=16,face = "italic")) +
+  scale_fill_brewer(palette = "Dark2")
+
+f_savePlot(last_plot(), file_path = "Figures/ageHistogramCommune.png")
 
 
 ## EoF
