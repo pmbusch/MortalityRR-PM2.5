@@ -26,6 +26,27 @@ df %>% filter(commune_valid) %>%
 df %>% filter(commune_valid) %>% 
   pull(deathsAdj_CDP) %>% var()
 
+# Correlations
+data_model %>% dplyr::select(
+  mp25_10um, 
+  population,
+  mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,mrAdj_LCA,
+  urbanDensity,
+  heating_degree_15_winter,
+  hr_anual,
+  income_median,
+  # mp10_minus25,
+  perc_woodHeating,
+  perc_fonasa_AB, perc_fonasa_CD, 
+  # perc_health,
+  perc_less_highschool,perc_occupancy,
+  perc_female,perc_ethnicityOrig,perc_rural,
+  perc_overcrowding_medium
+) %>% 
+  na.omit() %>% cor()
+
+
+
 
 # Base Model. Y= CDP -------------
 # Poisson distribution
@@ -687,27 +708,28 @@ library(caret)
 data_model %>% names() %>% sort()
 df <-  data_model %>% 
   dplyr::select(
-    population,
     deathsAdj_CDP,
-    urbanDensity_mean,urbanDensity_median,urbanDensity_mean_p90,
+    # deathsAdj_AllCauses,
+    # deathsAdj_CVD,
+    # deathsAdj_RSP,
+    # deathsAdj_CAN,
+    # deathsAdj_LCA,
+    mp25_10um, population,
     urbanDensity,
-    heating_degree_15_anual,
-    heating_degree_15_fall,   heating_degree_15_spring,
-    heating_degree_15_summer, heating_degree_15_winter,
-    heating_degree_18_anual,  heating_degree_18_fall,
-    heating_degree_18_spring, heating_degree_18_summer,
-    heating_degree_18_winter, hr_anual,
-    hr_fall, hr_spring, hr_summer, hr_winter,
-    tmed_anual,  tmed_fall, tmed_spring, tmed_summer,tmed_winter,
-    income_mean,income_median,
-    mp25_10um, 
+    heating_degree_15_winter,
+    hr_anual,
+    income_median,
     # mp10_minus25,
-    perc_woodCooking,perc_woodHeating,perc_woodWarmWater,perc_wood_avg,
-    perc_FFAA, perc_fonasa_AB, perc_fonasa_CD, perc_isapre, 
+    perc_woodHeating,
+    perc_fonasa_AB, perc_fonasa_CD, 
     # perc_health,
     perc_less_highschool,perc_occupancy,
     perc_female,perc_ethnicityOrig,perc_rural,
-    perc_overcrowding_low,perc_overcrowding_medium,perc_overcrowding_high) %>% 
+    perc_overcrowding_medium,
+    perc_overcrowding_high,perc_isapre,
+    perc_woodWarmWater,perc_woodCooking,tmed_winter,tmed_anual,
+    hr_summer,hr_winter,heating_degree_18_anual,heating_degree_18_winter,heating_degree_15_anual
+  ) %>% 
   na.omit()
 df %>% nrow() # Number of obs
 
@@ -757,22 +779,43 @@ f_tableMRR(glm_fit$finalModel, preview="none", highlight = T)
 ## Adjust same model
 formula_step <- format(glm_fit$finalModel$formula) %>% 
   paste(collapse = "") %>% 
-  str_replace(".outcome", "deathsAdj_CDP") %>% 
+  str_replace(".outcome", "deathsAdj_LCA") %>% 
   str_replace_all("\\+",") + scale(") %>% 
-  str_replace("~","~scale(") %>% 
+  # str_replace("~","~mp25_10um+scale(") %>%
+  str_replace("~","~scale(") %>% str_replace("scale\\( mp25_10um \\)","mp25_10um") %>%
   str_remove_all(" ") %>% 
   str_replace("scale\\(OFF", "offset(log(population))") %>% 
   formula()
 formula_step
 
-mod <- glm(formula_step,
+mod <- glm.nb(formula_step,
            data=df,
-           family=poisson(link=log),
+           # family=poisson(link=log),
            na.action = na.omit)
 summary(mod)
 nobs(mod)
 f_tableMRR(mod, preview = "none", highlight=T)
 f_figMRR(mod)
+
+# get data for excel
+CI <- confint(mod, method="Wald", level=0.95)
+df_csv <- data.frame(
+  model="Stepwise",
+  endpoint="LCA",  
+  n_obs=nobs(mod),
+  aic=AIC(mod),
+  bic=BIC(mod),
+  term=rownames(summary(mod)$coefficients),
+  coef=exp(summary(mod)$coefficients[,"Estimate"]) %>% round(2),
+  low=exp(CI[,1]) %>% round(2),
+  high=exp(CI[,2]) %>% round(2),
+  p_value=summary(mod)$coefficients[,4]
+) %>% mutate(ci=paste("(",format(low,digits=3),
+                      ", ",format(high,digits=3),")",sep = ""))
+df_csv
+.Last.value %>% write.table("clipboard", sep="\t",row.names = F)
+
+
 
 rm(glm_fit, mod)
 

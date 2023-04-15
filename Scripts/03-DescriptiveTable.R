@@ -21,7 +21,7 @@ df <- data_model %>%
   mutate(perc_fonasa=perc_fonasa_A+perc_fonasa_B+perc_fonasa_C+perc_fonasa_D,
          population=population/1e3,
          income_median=income_median/1e3) %>% 
-  select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,
+  dplyr::select(mrAdj_AllCauses,mrAdj_CDP,mrAdj_CVD,mrAdj_RSP,mrAdj_CAN,
          mrAdj_LCA, 
          # mrAdj_ExtCauses, 
          mp25,commune_valid,
@@ -41,16 +41,16 @@ df_sep <- df %>%
   mutate(indicator=paste(round(numeric.mean,1)," (",
                          round(numeric.sd,1),")", sep=""),
          commune_valid=NULL) %>% 
-  select(skim_variable, has_monitor, indicator) %>% 
+  dplyr::select(skim_variable, has_monitor, indicator) %>% 
   spread(has_monitor, indicator)
   
 df_skim <- df %>% 
-  select(-commune_valid) %>% 
+  dplyr::select(-commune_valid) %>% 
   skim() %>% 
   mutate(n=complete_rate*nrow(df),
          indicator=paste(round(numeric.mean,1)," (",
                          round(numeric.sd,1),")", sep="")) %>% 
-  select(skim_variable,n, indicator) %>% 
+  dplyr::select(skim_variable,n, indicator) %>% 
   left_join(df_sep)
 
 n_mp25 <- data_model %>% filter(commune_valid) %>% nrow()
@@ -86,6 +86,9 @@ df_skim %>%
 # print(preview="pptx")
 # print(preview="docx")
 
+
+
+
 rm(foot_note,df_skim, df_sep, n_mp25)
 
 ## DESCRIPTIVE TABLE FOR PM2.5 COMMUNES -------------
@@ -93,12 +96,12 @@ rm(foot_note,df_skim, df_sep, n_mp25)
 # Note: Only valid for variables with a meaningful zero (as ratios). Not valid for T°
 # https://en.wikipedia.org/wiki/Coefficient_of_variation
 df_skim <- df %>% 
-  filter(commune_valid) %>% select(-commune_valid) %>% 
+  filter(commune_valid) %>% dplyr::select(-commune_valid) %>% 
   skim() %>% 
   mutate(
     # n=complete_rate*nrow(filter(df,!is.na(mp25))) %>% round(0),
          cv=numeric.sd/numeric.mean) %>% 
-  select(skim_variable, numeric.mean, numeric.sd,
+  dplyr::select(skim_variable, numeric.mean, numeric.sd,
          numeric.p0, numeric.p50, numeric.p100) %>% 
   rename(Variable=skim_variable,
          Mean=numeric.mean,
@@ -138,6 +141,33 @@ df_skim %>%
          border.bottom = officer::fp_border(style = "solid", width=2))
   # print(preview="docx")
   # print(preview="pptx")
+
+# Histograms
+df_hist <- df %>% 
+  filter(commune_valid) %>% dplyr::select(-commune_valid)
+names(df_hist)
+
+df_hist <-  df_hist %>% 
+  pivot_longer(c(1:32), names_to = "Variable", values_to = "value") %>% 
+  mutate(Type=f_addTypeVar(Variable),
+         Variable=f_replaceVar(Variable))
+  
+types <- df_hist$Type %>% unique()
+
+pdf("Figures/descriptive_hist.pdf",
+    width=8, height=5)
+for (t in types){
+  p <- df_hist %>% 
+    filter(Type==t) %>% 
+    ggplot(aes(value))+
+    geom_histogram(fill="green",alpha=.5)+
+    facet_wrap(~Variable,scales = "free")+
+    labs(x="",y="Count",title=paste0(t," Variables"))
+    theme_bw(20)
+    print(p)
+}
+dev.off()
+
 
 
 # TABLE MEAN (SD) FOR PM2.5 LEVELS ---------------

@@ -30,6 +30,7 @@ df_modelConstruction <- tibble(model=as.character(),
                                n_obs=as.numeric(),
                                aic=as.numeric(),
                                bic=as.numeric(),
+                               term=as.character(),
                                coef=as.numeric(),
                                low=as.numeric(),
                                high=as.numeric(),
@@ -47,23 +48,27 @@ for (e in endpoints){
                    data = df,na.action=na.omit)
   
   # store data
-  CI <- confint(mod1, method="Wald", level=0.95)["mp25_10um",]
+  # CI <- confint(mod1, method="Wald", level=0.95)["mp25_10um",]
+  CI <- confint(mod1, method="Wald", level=0.95)
   df_modelConstruction <- rbind(df_modelConstruction,tibble(
     model="PM2.5 only",
     endpoint=e,  
     n_obs=nobs(mod1),
     aic=AIC(mod1),
     bic=BIC(mod1),
-    coef=exp(summary(mod1)$coefficients["mp25_10um","Estimate"]) %>% round(2),
-    low=exp(CI[1]) %>% round(2),
-    high=exp(CI[2]) %>% round(2),
+    # coef=exp(summary(mod1)$coefficients["mp25_10um","Estimate"]) %>% round(2),
+    term=rownames(summary(mod1)$coefficients),
+    coef=exp(summary(mod1)$coefficients[,"Estimate"]) %>% round(2),
+    low=exp(CI[,1]) %>% round(2),
+    high=exp(CI[,2]) %>% round(2),
     ci=paste("(",format(low,digits=3),
                 ", ",format(high,digits=3),")",sep = ""),
-    p_value=summary(mod1)$coefficients["mp25_10um",4]
+    # p_value=summary(mod1)$coefficients["mp25_10um",4]
+    p_value=summary(mod1)$coefficients[,4]
   ))
   rm(CI,mod1)
   
-  # Mod 2 - PM2.5 + Meteorological  ------ 
+  # Mod 2 - PM2.5 + Mesteorological  ------ 
   mod2 <- glm.nb(endpoint ~ mp25_10um +
                       scale(hr_anual) +
                       scale(heating_degree_15_winter) +
@@ -71,19 +76,20 @@ for (e in endpoints){
                     data = df,na.action=na.omit)
   
   # store data
-  CI <- confint(mod2, method="Wald", level=0.95)["mp25_10um",]
+  CI <- confint(mod2, method="Wald", level=0.95)
   df_modelConstruction <- rbind(df_modelConstruction,tibble(
     model="PM2.5 + Meteorological",
     endpoint=e,
     n_obs=nobs(mod2),
     aic=AIC(mod2),
     bic=BIC(mod2),
-    coef=exp(summary(mod2)$coefficients["mp25_10um","Estimate"]) %>% round(2),
-    low=exp(CI[1]) %>% round(2),
-    high=exp(CI[2]) %>% round(2),
+    term=rownames(summary(mod2)$coefficients),
+    coef=exp(summary(mod2)$coefficients[,"Estimate"]) %>% round(2),
+    low=exp(CI[,1]) %>% round(2),
+    high=exp(CI[,2]) %>% round(2),
     ci=paste("(",format(low,digits=3),
              ", ",format(high,digits=3),")",sep = ""),
-    p_value=summary(mod2)$coefficients["mp25_10um",4]
+    p_value=summary(mod2)$coefficients[,4]
   ))
   rm(CI,mod2)
   
@@ -98,19 +104,20 @@ for (e in endpoints){
                     data = df,na.action=na.omit)
   
   # store data
-  CI <- confint(mod3, method="Wald", level=0.95)["mp25_10um",]
+  CI <- confint(mod3, method="Wald", level=0.95)
   df_modelConstruction <- rbind(df_modelConstruction,tibble(
     model="PM2.5 + Demographic",
     endpoint=e,
     n_obs=nobs(mod3),
     aic=AIC(mod3),
     bic=BIC(mod3),
-    coef=exp(summary(mod3)$coefficients["mp25_10um","Estimate"]) %>% round(2),
-    low=exp(CI[1]) %>% round(2),
-    high=exp(CI[2]) %>% round(2),
+    term=rownames(summary(mod3)$coefficients),
+    coef=exp(summary(mod3)$coefficients[,"Estimate"]) %>% round(2),
+    low=exp(CI[,1]) %>% round(2),
+    high=exp(CI[,2]) %>% round(2),
     ci=paste("(",format(low,digits=3),
              ", ",format(high,digits=3),")",sep = ""),
-    p_value=summary(mod3)$coefficients["mp25_10um",4]
+    p_value=summary(mod3)$coefficients[,4]
   ))
   rm(CI,mod3)
   
@@ -123,19 +130,20 @@ for (e in endpoints){
                     data = df,na.action=na.omit)
   
   # store data
-  CI <- confint(mod4, method="Wald", level=0.95)["mp25_10um",]
+  CI <- confint(mod4, method="Wald", level=0.95)
   df_modelConstruction <- rbind(df_modelConstruction,tibble(
     model="PM2.5 + Socioeconomic",
     endpoint=e,
     n_obs=nobs(mod4),
     aic=AIC(mod4),
     bic=BIC(mod4),
-    coef=exp(summary(mod4)$coefficients["mp25_10um","Estimate"]) %>% round(2),
-    low=exp(CI[1]) %>% round(2),
-    high=exp(CI[2]) %>% round(2),
+    term=rownames(summary(mod4)$coefficients),
+    coef=exp(summary(mod4)$coefficients[,"Estimate"]) %>% round(2),
+    low=exp(CI[,1]) %>% round(2),
+    high=exp(CI[,2]) %>% round(2),
     ci=paste("(",format(low,digits=3),
              ", ",format(high,digits=3),")",sep = ""),
-    p_value=summary(mod4)$coefficients["mp25_10um",4]
+    p_value=summary(mod4)$coefficients[,4]
   ))
   rm(CI,mod4)
   
@@ -156,19 +164,20 @@ for (e in endpoints){
                  data = df,na.action=na.omit)
   
   # store data
-  CI <- confint(modFull, method="Wald", level=0.95)["mp25_10um",]
+  CI <- confint(modFull, method="Wald", level=0.95)
   df_modelConstruction <- rbind(df_modelConstruction,tibble(
     model="Full Model",
     endpoint=e,
     n_obs=nobs(modFull),
     aic=AIC(modFull),
     bic=BIC(modFull),
-    coef=exp(summary(modFull)$coefficients["mp25_10um","Estimate"]) %>% round(2),
-    low=exp(CI[1]) %>% round(2),
-    high=exp(CI[2]) %>% round(2),
+    term=rownames(summary(modFull)$coefficients),
+    coef=exp(summary(modFull)$coefficients[,"Estimate"]) %>% round(2),
+    low=exp(CI[,1]) %>% round(2),
+    high=exp(CI[,2]) %>% round(2),
     ci=paste("(",format(low,digits=3),
              ", ",format(high,digits=3),")",sep = ""),
-    p_value=summary(modFull)$coefficients["mp25_10um",4]
+    p_value=summary(modFull)$coefficients[,4]
   ))
   rm(CI,modFull)
   
@@ -177,6 +186,9 @@ for (e in endpoints){
 }
 
 df_modelConstruction
+write.csv(df_modelConstruction,
+          "Data/Data_Model/modelConstruction_coef.csv",row.names = F)
+
 
 # Summary Table -----
 
