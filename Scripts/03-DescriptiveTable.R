@@ -142,6 +142,12 @@ df_skim %>%
   # print(preview="docx")
   # print(preview="pptx")
 
+# Pop weight for PM2.5
+df %>% 
+  filter(commune_valid) %>% 
+  summarize(mp25_pop_average = sum(mp25 * population) / sum(population))
+
+
 # Histograms
 df_hist <- df %>% 
   filter(commune_valid) %>% dplyr::select(-commune_valid)
