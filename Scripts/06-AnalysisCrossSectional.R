@@ -4,9 +4,15 @@
 
 ## Load Data ------
 theme_set(theme_bw(16)+theme(panel.grid.major = element_blank()))
+# alternative to load data for models
+data_model <- read.delim("Data/Data_Model/Data_Model.csv",sep=";",skip=1)
+
 load('.RData')
+
+
 # file_name <- "Figuras/Analisis_Transversal/Modelos_Mortalidad_All/%s.png"
 # file_mod <- "Data/Data_Modelo/Modelos_AllCauses/%s.rsd"
+source("Scripts/00-CargaLibrerias.R", encoding = "UTF-8")
 source("Scripts/00-Functions.R", encoding = "UTF-8")
 source("Scripts/05-FunctionsCrossSectional.R", encoding = "UTF-8")
 
@@ -17,8 +23,8 @@ library(gamm4)
 library(ggfortify)
 
 df <- data_model %>% arrange(population) %>% 
-  mutate(deathsAdj=deathsAdj_ExtCauses-deathsAdj_SUI,
-         Latitude=-map_dbl(geometry, ~st_centroid(.x)[[2]]))
+  mutate(deathsAdj=deathsAdj_ExtCauses-deathsAdj_SUI)
+         # Latitude=-map_dbl(geometry, ~st_centroid(.x)[[2]]))
 
 # Mean vs Var: Overdispersion
 df %>% filter(commune_valid) %>% 
