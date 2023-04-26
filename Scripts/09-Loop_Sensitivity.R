@@ -264,7 +264,9 @@ df_coef_params <- df_coef %>%
   mutate(case=case %>% str_replace_all("Population commune  50K",
                                        "Population commune >50,000") %>% 
            str_replace_all("10_","10%"))
-  
+
+write.table(df_coef_params,"Data/Data_Model/Model_sensitivity.csv",sep=";")
+
 ## Summary figure ----------------
 df_coef_params$cause %>% unique()
 levels_causes <- c("All \n Causes","CDP","CVD","RSP","CAN","LCA")

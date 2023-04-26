@@ -22,9 +22,8 @@ Code
 
 
 **Code for Figures:**
-* [`map.R`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Scripts/map.R): Map figure.
-	* [`functions_map.R`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Scripts/functions_map.R): Functions to generate maps.
+* [`Figure2.R`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Scripts/Figure2.R): Figure 2 of main article. Sensitivity of the MRR of PM2.5 under different scenarios and causes of death.
 * [`age_pyramid.R`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Scripts/age_pyramid.R): Figure of age pyramid for Chile.
-* [`deaths_avoided.R`](https://github.com/pmbusch/MortalityRR-PM2.5/tree/master/Scripts/deaths_avoided.R): Calculate deaths avoided by improving air quality to different standards.
+
 
 **Note:** To load all required libraries run the following command: *source("Scripts/00-CargaLibrerias.R", encoding = "UTF-8")*
